@@ -243,7 +243,8 @@ func searchRecordsByDescription(queries []string, page, pageSize int, queryType 
 	return results, totalPay, totalIncome, int(searchResults.Total), nil
 }
 
-func getSumByPeriod(startDate, endDate string) (float64, float64, error) {
+func getSumByPeriod(startDate, endDate string) ([]Record, float64, float64, error) {
+	var records []Record
 	var sumPay float64 = 0
 	var sumIncome float64 = 0
 
@@ -260,6 +261,8 @@ func getSumByPeriod(startDate, endDate string) (float64, float64, error) {
 					return err
 				}
 				if record.Date >= startDate && record.Date <= endDate {
+					records = append(records, record)
+
 					switch record.TradeType {
 					case "record_type_pay":
 						sumPay += record.Amount
@@ -277,7 +280,7 @@ func getSumByPeriod(startDate, endDate string) (float64, float64, error) {
 		return nil
 	})
 
-	return sumPay, sumIncome, err
+	return records, sumPay, sumIncome, err
 }
 
 func initializeHandler(w http.ResponseWriter, r *http.Request) {
@@ -360,19 +363,19 @@ func searchRecordHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := struct {
-		Records     []Record `json:"records"`
-		TotalPay    float64  `json:"total-pay"`
-		TotalIncome float64  `json:"total-income"`
-		TotalCount  int      `json:"total-count"`
-		Page        int      `json:"page"`
-		PageSize    int      `json:"page_size"`
+		Records    []Record `json:"records"`
+		SumPay     float64  `json:"sum-pay"`
+		SumIncome  float64  `json:"sum-income"`
+		TotalCount int      `json:"total-count"`
+		Page       int      `json:"page"`
+		PageSize   int      `json:"page_size"`
 	}{
-		Records:     records,
-		TotalPay:    sumPay,
-		TotalIncome: sumIncome,
-		TotalCount:  totalCount,
-		Page:        page,
-		PageSize:    pageSize,
+		Records:    records,
+		SumPay:     sumPay,
+		SumIncome:  sumIncome,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
 	}
 
 	json.NewEncoder(w).Encode(response)
@@ -386,14 +389,24 @@ func getSumHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sumPay, sumIncome, err := getSumByPeriod(startDate, endDate)
+	records, sumPay, sumIncome, err := getSumByPeriod(startDate, endDate)
 	if err != nil {
 		log.Printf("Failed to get sum: %v", err)
 		http.Error(w, "Failed to calculate sum", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]float64{"sum-pay": sumPay, "sum-income": sumIncome})
+	response := struct {
+		Records   []Record `json:"records"`
+		SumPay    float64  `json:"sum-pay"`
+		SumIncome float64  `json:"sum-income"`
+	}{
+		Records:   records,
+		SumPay:    sumPay,
+		SumIncome: sumIncome,
+	}
+
+	json.NewEncoder(w).Encode(response)
 }
 
 func deleteRecordHandler(w http.ResponseWriter, r *http.Request) {
