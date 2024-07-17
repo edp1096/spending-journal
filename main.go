@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -19,13 +21,20 @@ import (
 )
 
 type Record struct {
-	Type        string `json:"type"`
-	Amount      int    `json:"amount"`
-	Category    string `json:"category"`
-	Description string `json:"description"`
-	Date        string `json:"date"`
-	Time        string `json:"time"`
-	RegDTTM     string `json:"regdttm"`
+	ID          string  `json:"id"`
+	TradeType   string  `json:"trade-type"`
+	PayMethod   string  `json:"pay-method"`
+	Currency    string  `json:"currency"`
+	Amount      float64 `json:"amount"`
+	Category    string  `json:"category"`
+	Description string  `json:"description"`
+	Date        string  `json:"date"`
+	Time        string  `json:"time"`
+	RegDTTM     string
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
 }
 
 var db *badger.DB
@@ -117,35 +126,92 @@ func initBleveIndex() error {
 	})
 }
 
+func validateRecord(record Record) error {
+	if record.TradeType == "" {
+		return fmt.Errorf("trade-type is required")
+	}
+	if record.PayMethod == "" {
+		return fmt.Errorf("pay-method is required")
+	}
+	if record.Currency == "" {
+		return fmt.Errorf("currency is required")
+	}
+	if record.Amount == 0 {
+		return fmt.Errorf("amount is required and must be non-zero")
+	}
+	if record.Category == "" {
+		return fmt.Errorf("category is required")
+	}
+	if record.Description == "" {
+		return fmt.Errorf("description is required")
+	}
+	if record.Date == "" {
+		return fmt.Errorf("date is required")
+	}
+	if _, err := time.Parse("2006-01-02", record.Date); err != nil {
+		return fmt.Errorf("invalid date format: use YYYY-MM-DD")
+	}
+	if record.Time != "" {
+		if _, err := time.Parse("15:04", record.Time); err != nil {
+			return fmt.Errorf("invalid time format: use HH:MM")
+		}
+	}
+	return nil
+}
+
 func addRecord(record Record) error {
-	now := time.Now()
-	timestamp := now.Unix()
-	key := fmt.Sprintf("record:%d", timestamp)
+	var err error
 
-	regdttm := now.Format("20060102150405")
-	record.RegDTTM = regdttm
-
-	err := db.Update(func(txn *badger.Txn) error {
-		value, _ := json.Marshal(record)
-		return txn.Set([]byte(key), value)
-	})
-
+	err = validateRecord(record)
 	if err != nil {
 		return err
 	}
 
-	return bleveIndex.Index(key, record)
+	now := time.Now()
+	timestamp := now.Unix()
+	// key := fmt.Sprintf("record:%d", timestamp)
+	id := fmt.Sprintf("record:%d", timestamp)
+	record.ID = id
+
+	regdttm := now.Format("20060102150405")
+	record.RegDTTM = regdttm
+
+	err = db.Update(func(txn *badger.Txn) error {
+		value, _ := json.Marshal(record)
+		// return txn.Set([]byte(key), value)
+		return txn.Set([]byte(id), value)
+	})
+	if err != nil {
+		return err
+	}
+
+	return bleveIndex.Index(id, record)
 }
 
-func searchRecordsByDescription(searchTerm string) ([]Record, int, error) {
+func searchRecordsByDescription(queries []string, page, pageSize int, queryType string) ([]Record, float64, float64, int, error) {
 	var results []Record
-	var totalSum int
+	var totalPay float64 = 0
+	var totalIncome float64 = 0
 
-	query := bleve.NewMatchQuery(searchTerm)
-	search := bleve.NewSearchRequest(query)
+	boolQuery := bleve.NewBooleanQuery()
+	for _, query := range queries {
+		matchQuery := bleve.NewMatchQuery(query)
+
+		if queryType == "AND" {
+			boolQuery.AddMust(matchQuery)
+		} else {
+			boolQuery.AddShould(matchQuery)
+		}
+	}
+
+	search := bleve.NewSearchRequest(boolQuery)
+	search.Size = pageSize
+	search.From = (page - 1) * pageSize
+	search.SortBy([]string{"-_score"})
+
 	searchResults, err := bleveIndex.Search(search)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, 0, err
 	}
 
 	for _, hit := range searchResults.Hits {
@@ -165,14 +231,21 @@ func searchRecordsByDescription(searchTerm string) ([]Record, int, error) {
 		}
 
 		results = append(results, record)
-		totalSum += record.Amount
+
+		switch record.TradeType {
+		case "record_type_pay":
+			totalPay += record.Amount
+		case "record_type_income":
+			totalIncome += record.Amount
+		}
 	}
 
-	return results, totalSum, nil
+	return results, totalPay, totalIncome, int(searchResults.Total), nil
 }
 
-func getSumByPeriod(startDate, endDate string) (int, error) {
-	var sum int
+func getSumByPeriod(startDate, endDate string) (float64, float64, error) {
+	var sumPay float64 = 0
+	var sumIncome float64 = 0
 
 	err := db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
@@ -187,7 +260,12 @@ func getSumByPeriod(startDate, endDate string) (int, error) {
 					return err
 				}
 				if record.Date >= startDate && record.Date <= endDate {
-					sum += record.Amount
+					switch record.TradeType {
+					case "record_type_pay":
+						sumPay += record.Amount
+					case "record_type_income":
+						sumIncome += record.Amount
+					}
 				}
 				return nil
 			})
@@ -199,27 +277,31 @@ func getSumByPeriod(startDate, endDate string) (int, error) {
 		return nil
 	})
 
-	return sum, err
+	return sumPay, sumIncome, err
 }
 
 func initializeHandler(w http.ResponseWriter, r *http.Request) {
-	var err error
-
 	password := r.URL.Query().Get("password")
+	if password == "" {
+		http.Error(w, "Password is required", http.StatusBadRequest)
+		return
+	}
 
-	err = initBadgerDB(password)
+	err := initBadgerDB(password)
 	if err != nil {
-		// log.Fatalf("Failed to initialize BadgerDB: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Failed to initialize BadgerDB: %v", err)
+		http.Error(w, "Failed to initialize database", http.StatusInternalServerError)
+		return
 	}
 
 	err = initBleveIndex()
 	if err != nil {
-		// log.Fatalf("Failed to initialize Bleve index: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Failed to initialize Bleve index: %v", err)
+		http.Error(w, "Failed to initialize search index", http.StatusInternalServerError)
+		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
@@ -228,13 +310,18 @@ func addRecordHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&record)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	err = addRecord(record)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Failed to add record: %v", err)
+		if strings.Contains(err.Error(), "required") {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, "Failed to add record", http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -249,34 +336,43 @@ func searchRecordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	records, _, err := searchRecordsByDescription(query)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	queries := strings.Fields(query)
+
+	queryType := r.URL.Query().Get("queryType")
+	if queryType != "AND" && queryType != "OR" {
+		queryType = "OR"
 	}
 
-	json.NewEncoder(w).Encode(records)
-}
-
-func searchRecordWithSumHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("q")
-	if query == "" {
-		http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
-		return
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 10
 	}
 
-	records, sum, err := searchRecordsByDescription(query)
+	records, sumPay, sumIncome, totalCount, err := searchRecordsByDescription(queries, page, pageSize, queryType)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Failed to search records: %v", err)
+		http.Error(w, "Failed to search records", http.StatusInternalServerError)
 		return
 	}
 
 	response := struct {
-		Records  []Record `json:"records"`
-		TotalSum int      `json:"total_sum"`
+		Records     []Record `json:"records"`
+		TotalPay    float64  `json:"total-pay"`
+		TotalIncome float64  `json:"total-income"`
+		TotalCount  int      `json:"total-count"`
+		Page        int      `json:"page"`
+		PageSize    int      `json:"page_size"`
 	}{
-		Records:  records,
-		TotalSum: sum,
+		Records:     records,
+		TotalPay:    sumPay,
+		TotalIncome: sumIncome,
+		TotalCount:  totalCount,
+		Page:        page,
+		PageSize:    pageSize,
 	}
 
 	json.NewEncoder(w).Encode(response)
@@ -290,38 +386,127 @@ func getSumHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sum, err := getSumByPeriod(startDate, endDate)
+	sumPay, sumIncome, err := getSumByPeriod(startDate, endDate)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Failed to get sum: %v", err)
+		http.Error(w, "Failed to calculate sum", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]int{"sum": sum})
+	json.NewEncoder(w).Encode(map[string]float64{"sum-pay": sumPay, "sum-income": sumIncome})
+}
+
+func deleteRecordHandler(w http.ResponseWriter, r *http.Request) {
+	recordID := r.URL.Query().Get("id")
+	if recordID == "" {
+		http.Error(w, "Query parameter 'id' is required", http.StatusBadRequest)
+		return
+	}
+
+	err := db.Update(func(txn *badger.Txn) error {
+		err := txn.Delete([]byte(recordID))
+		if err != nil {
+			return err
+		}
+		return bleveIndex.Delete(recordID)
+	})
+	if err != nil {
+		log.Printf("Failed to delete record: %v", err)
+		http.Error(w, "Failed to delete record", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+func updateRecordHandler(w http.ResponseWriter, r *http.Request) {
+	recordID := r.URL.Query().Get("id")
+	if recordID == "" {
+		http.Error(w, "Query parameter 'id' is required", http.StatusBadRequest)
+		return
+	}
+
+	var updatedRecord Record
+	err := json.NewDecoder(r.Body).Decode(&updatedRecord)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err = validateRecord(updatedRecord)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var existingRecord Record
+	err = db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(recordID))
+		if err != nil {
+			return err
+		}
+		return item.Value(func(v []byte) error {
+			return json.Unmarshal(v, &existingRecord)
+		})
+	})
+	if err != nil {
+		log.Printf("Failed to fetch record for update: %v", err)
+		http.Error(w, "Record not found", http.StatusNotFound)
+		return
+	}
+
+	err = db.Update(func(txn *badger.Txn) error {
+		updatedRecord.RegDTTM = existingRecord.RegDTTM
+		updatedRecord.ID = existingRecord.ID
+		value, _ := json.Marshal(updatedRecord)
+		err = txn.Set([]byte(recordID), value)
+		if err != nil {
+			return err
+		}
+
+		return bleveIndex.Index(recordID, updatedRecord)
+	})
+	if err != nil {
+		log.Printf("Failed to update record: %v", err)
+		http.Error(w, "Failed to update record", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
 func main() {
-	var err error
-
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /db/init", initializeHandler)
+	mux.HandleFunc("GET /setup/db", initializeHandler)
 	mux.HandleFunc("POST /record", addRecordHandler)
 	mux.HandleFunc("GET /record/search", searchRecordHandler)
-	mux.HandleFunc("GET /record/search-with-sum", searchRecordWithSumHandler)
 	mux.HandleFunc("GET /record/sum", getSumHandler)
+	mux.HandleFunc("DELETE /record/delete", deleteRecordHandler)
+	mux.HandleFunc("PUT /record/update", updateRecordHandler)
 
-	fmt.Println("Server starting on localhost:8080")
 	server := &http.Server{Addr: "127.0.0.1:8080", Handler: mux}
 	go func() {
-		err := server.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
-			fmt.Println(err)
+		fmt.Println("Server starting on localhost:8080")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
 		}
 	}()
 
-	kill := make(chan os.Signal, 1)
-	signal.Notify(kill, os.Interrupt, syscall.SIGTERM)
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	<-kill
+	<-stop
+
+	fmt.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("Server forced to shutdown: %v", err)
+	}
 
 	if bleveIndex != nil {
 		bleveIndex.Close()
@@ -330,8 +515,5 @@ func main() {
 		db.Close()
 	}
 
-	err = server.Shutdown(context.Background())
-	if err != nil {
-		log.Printf("Shutdown error: %s", err)
-	}
+	fmt.Println("Server exited")
 }

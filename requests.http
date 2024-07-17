@@ -1,21 +1,22 @@
 @uri = http://localhost:8080
 
 
-
 ### init db
-GET {{uri}}/db/init?password=12345 HTTP/1.1
+GET {{uri}}/setup/db?password=12345 HTTP/1.1
 
 ### input - payment
 POST {{uri}}/record HTTP/1.1
 Content-Type: application/json
 
 {
-    "type": "pay",
+    "trade-type": "record_type_pay",
+    "pay-method": "체크카드",
+    "currency": "KRW",
     "amount": 10000,
     "category": "식비",
     "description": "아침 식사",
     "date": "2024-07-17",
-    "time": "08:27:36"
+    "time": "08:27"
 }
 
 ### input - payment
@@ -23,13 +24,14 @@ POST {{uri}}/record HTTP/1.1
 Content-Type: application/json
 
 {
-    "type": "pay",
+    "trade-type": "record_type_pay",
+    "pay-method": "신용카드",
+    "currency": "KRW",
     "amount": 13000,
     "category": "식비",
     "description": "점심 식사",
     "date": "2024-07-17",
-    "time": "12:35:22",
-    "regdttm": "2024-07-17 12:36:08"
+    "time": "12:35"
 }
 
 ### input - income
@@ -37,20 +39,39 @@ POST {{uri}}/record HTTP/1.1
 Content-Type: application/json
 
 {
-    "type": "income",
+    "trade-type": "record_type_income",
+    "pay-method": "현금",
+    "currency": "KRW",
     "amount": 50000,
     "category": "수입",
     "description": "점심 용돈",
     "date": "2024-07-17",
-    "time": "13:01:30",
-    "regdttm": "2024-07-17 13:01:50"
+    "time": "13:01"
 }
 
+### get list
+GET {{uri}}/record/search?q=record_type_pay HTTP/1.1
+
 ### search
-GET {{uri}}/record/search?q=식비&20점심&20식사 HTTP/1.1
+GET {{uri}}/record/search?q=record_type_pay%20점심&queryType=AND&page=1&pageSize=2 HTTP/1.1
 
-### summary
-GET {{uri}}/record/sum?start=2024-07-01&end=2024-07-31
+### summary by period
+GET {{uri}}/record/sum?start=2024-07-01&end=2024-07-31 HTTP/1.1
 
-### search and summary
-GET {{uri}}/record/search-with-sum?q=income
+### delete
+DELETE {{uri}}/record/delete?id=record:1721190212 HTTP/1.1
+
+### update
+PUT {{uri}}/record/update?id=record:1721190444 HTTP/1.1
+Content-Type: application/json
+
+{
+    "type": "record_type_pay",
+    "pay-method": "현금",
+    "currency": "KRW",
+    "amount": 12500,
+    "category": "식비",
+    "description": "아점",
+    "date": "2024-07-17",
+    "time": "11:20"
+}
