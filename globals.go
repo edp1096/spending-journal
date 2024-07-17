@@ -8,5 +8,5 @@ import (
 var db *badger.DB
 var bleveIndex bleve.Index
 
-var directPays = []string{"현금", "체크카드", "직불카드"}
-var creditPays = []string{"신용카드"}
+var PayTypesDirect = []string{"현금", "체크카드", "직불카드"}
+var PayTypesCredit = []string{"신용카드"}
