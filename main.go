@@ -1,4 +1,4 @@
-package main // import "hello-badger"
+package main // import "app-server"
 
 import (
 	"context"
