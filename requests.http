@@ -1,0 +1,56 @@
+@uri = http://localhost:8080
+
+
+
+### init db
+GET {{uri}}/db/init?password=12345 HTTP/1.1
+
+### input - payment
+POST {{uri}}/record HTTP/1.1
+Content-Type: application/json
+
+{
+    "type": "pay",
+    "amount": 10000,
+    "category": "식비",
+    "description": "아침 식사",
+    "date": "2024-07-17",
+    "time": "08:27:36"
+}
+
+### input - payment
+POST {{uri}}/record HTTP/1.1
+Content-Type: application/json
+
+{
+    "type": "pay",
+    "amount": 13000,
+    "category": "식비",
+    "description": "점심 식사",
+    "date": "2024-07-17",
+    "time": "12:35:22",
+    "regdttm": "2024-07-17 12:36:08"
+}
+
+### input - income
+POST {{uri}}/record HTTP/1.1
+Content-Type: application/json
+
+{
+    "type": "income",
+    "amount": 50000,
+    "category": "수입",
+    "description": "점심 용돈",
+    "date": "2024-07-17",
+    "time": "13:01:30",
+    "regdttm": "2024-07-17 13:01:50"
+}
+
+### search
+GET {{uri}}/record/search?q=식비&20점심&20식사 HTTP/1.1
+
+### summary
+GET {{uri}}/record/sum?start=2024-07-01&end=2024-07-31
+
+### search and summary
+GET {{uri}}/record/search-with-sum?q=income
