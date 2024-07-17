@@ -1,0 +1,53 @@
+package server
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+)
+
+func SetupServer() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /setup/db", initializeHandler)
+	mux.HandleFunc("POST /record", addRecordHandler)
+	mux.HandleFunc("GET /record/search", searchRecordHandler)
+	mux.HandleFunc("GET /record/sum", getSumHandler)
+	mux.HandleFunc("DELETE /record/delete", deleteRecordHandler)
+	mux.HandleFunc("PUT /record/update", updateRecordHandler)
+
+	server := &http.Server{Addr: "127.0.0.1:8080", Handler: mux}
+	go func() {
+		fmt.Println("Server starting on localhost:8080")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	<-stop
+
+	fmt.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("Server forced to shutdown: %v", err)
+	}
+
+	if bleveIndex != nil {
+		bleveIndex.Close()
+	}
+	if db != nil {
+		db.Close()
+	}
+
+	fmt.Println("Server exited")
+}
