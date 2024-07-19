@@ -13,12 +13,23 @@ import (
 
 func SetupServer() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /setup/db", initializeHandler)
+
+	mux.HandleFunc("GET /setup/db", setupDatabaseHandler)
+
+	// Pay method
+	mux.HandleFunc("POST /method", addMethodHandler)
+	mux.HandleFunc("DELETE /method", deleteMethodHandler)
+	mux.HandleFunc("PUT /method", updateMethodHandler)
+	mux.HandleFunc("GET /method", getMethodListHandler)
+
+	// Pay record
 	mux.HandleFunc("POST /record", addRecordHandler)
-	mux.HandleFunc("GET /record/search", searchRecordHandler)
+	mux.HandleFunc("DELETE /record", deleteRecordHandler)
+	mux.HandleFunc("PUT /record", updateRecordHandler)
+	mux.HandleFunc("GET /record", searchRecordHandler)
 	mux.HandleFunc("GET /record/sum", getSumHandler)
-	mux.HandleFunc("DELETE /record/delete", deleteRecordHandler)
-	mux.HandleFunc("PUT /record/update", updateRecordHandler)
+
+	mux.HandleFunc("GET /", handleStaticFiles)
 
 	server := &http.Server{Addr: "127.0.0.1:8080", Handler: mux}
 	go func() {

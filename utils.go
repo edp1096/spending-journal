@@ -35,6 +35,20 @@ func getSalt(filename string) ([]byte, error) {
 	return salt, nil
 }
 
+func validateMethod(method Method) error {
+	if method.Name == "" {
+		return fmt.Errorf("name is required")
+	}
+	if method.PayMethod == "" {
+		return fmt.Errorf("pay-method is required")
+	}
+	if method.PayType == "" {
+		return fmt.Errorf("pay-type is required")
+	}
+
+	return nil
+}
+
 func validateRecord(record Record) error {
 	if record.TransactionType == "" {
 		return fmt.Errorf("transaction-type is required")
@@ -51,9 +65,9 @@ func validateRecord(record Record) error {
 	if record.Category == "" {
 		return fmt.Errorf("category is required")
 	}
-	if record.Description == "" {
-		return fmt.Errorf("description is required")
-	}
+	// if record.Description == "" {
+	// 	return fmt.Errorf("description is required")
+	// }
 	if record.Date == "" {
 		return fmt.Errorf("date is required")
 	}
@@ -65,5 +79,6 @@ func validateRecord(record Record) error {
 			return fmt.Errorf("invalid time format: use HH:MM")
 		}
 	}
+
 	return nil
 }

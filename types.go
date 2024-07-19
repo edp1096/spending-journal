@@ -4,8 +4,8 @@ package server
 type Method struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
-	PayMethod   string `json:"pay-method"` // cash, debit-card (check-card, debit-card), postpaid-card (credit-card)
-	PayType     string `json:"pay-type"`   // direct, credit
+	PayMethod   string `json:"pay-method"` // cash, debit-card (check-card, debit-card), postpaid-card (credit-card), hybrid-card
+	PayType     string `json:"pay-type"`   // direct, credit, hybrid(rebolving)
 	RepayDate   string `json:"repay-date,omitempty"`
 	Description string `json:"description,omitempty"`
 	RegDTTM     string
