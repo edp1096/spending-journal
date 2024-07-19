@@ -4,28 +4,54 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="assets/css/pico.min.css">
+    <!-- <link rel="stylesheet" href="assets/css/pico.min.css"> -->
     <script src="assets/js/alpine.min.js" defer></script>
 </head>
 
 <body>
-    지출기입장
+    <h1>지출기입장</h1>
 
+    <div x-data="dataPayMethods">
+        <button @click="getMethods">Get Pay methods</button>
+
+        <ul>
+            <template x-for="m in methods">
+                <li>
+                    <span x-text="m.name"></span> /
+                    <span x-text="m['pay-method']"></span> /
+                    <span x-text="m['pay-type']"></span> /
+                    <span x-text="m.description"></span>
+                </li>
+            </template>
+        </ul>
+    </div>
 </body>
 
 <script>
-    async function getMethodList() {
-        
+    const dataPayMethods = () => {
+        const initializer = {
+            methods: [],
+            flushStaticMethods() {
+                const methods = this.$root.querySelectorAll("li[is-static]")
+                for (const s of methods) { s.remove() }
+            },
+            async getMethods() {
+                this.flushStaticMethods()
+                this.methods = []
+
+                const uri = `http://localhost:8080/method`
+
+                const r = await fetch(uri)
+                if (r.ok) {
+                    this.methods = await r.json()
+                    console.log(this.methods)
+                }
+            },
+            init() { }
+        }
+
+        return initializer
     }
-
-    function init() {
-
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        init()
-    })
-
 </script>
 
 </html>

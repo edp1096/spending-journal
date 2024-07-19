@@ -1,7 +1,7 @@
 @uri = http://localhost:8080
 
 
-### init db
+### setup db
 GET {{uri}}/setup/db?password=12345 HTTP/1.1
 
 
