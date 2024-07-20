@@ -8,10 +8,10 @@
     <script src="assets/js/alpine.min.js" defer></script>
 </head>
 
-<body>
+<body x-data="allData">
     <h1>지출기입장</h1>
 
-    <div x-data="dataPayMethods">
+    <div>
         <button @click="getMethods">Get Pay methods</button>
 
         <ul>
@@ -25,10 +25,18 @@
             </template>
         </ul>
     </div>
+
+    <button @click="openPasswordGate()">Toggle</button>
+    <div x-data="{ open: false }" id="password-gate-container">
+        <div id="password-gate" x-show="open" x-transition>
+            Hello 👋
+            <button @click="open = !open">X</button>
+        </div>
+    </div>
 </body>
 
 <script>
-    const dataPayMethods = () => {
+    const allData = () => {
         const initializer = {
             methods: [],
             flushStaticMethods() {
@@ -52,6 +60,24 @@
 
         return initializer
     }
+
+    function openPasswordGate() {
+        const passwordGate = Alpine.$data(document.querySelector("#password-gate-container"))
+        passwordGate.open = true
+    }
+
+    document.addEventListener('alpine:initialized', () => { openPasswordGate() })
 </script>
+
+<style>
+    #password-gate {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: thistle;
+        top: 0;
+        left: 0;
+    }
+</style>
 
 </html>
