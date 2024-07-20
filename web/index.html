@@ -84,10 +84,7 @@
                 const uri = `http://localhost:8080/record?q=record:&pageSize=1000`
 
                 const r = await fetch(uri)
-                if (r.ok) {
-                    this.records = await r.json()
-                    console.log(this.records)
-                }
+                if (r.ok) { this.records = await r.json() }
             },
             init() { }
         }
