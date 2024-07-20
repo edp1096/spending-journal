@@ -6,14 +6,17 @@
 
 ## 엔드포인트
 * DB 초기화 - GET /setup/db
-* 거래 추가 - POST /record
-* 거래 검색 - GET /record/search
-* 기간내 거래 내역 - GET /record/sum
-* 거래 삭제 - DELETE /record/delete
-* 거래 수정 - PUT /record/update
 
-* 지불수단 추가
-* 지불수단 목록
+* 거래 추가 - POST /record
+* 거래 수정 - PUT /record/update
+* 거래 삭제 - DELETE /record/delete
+* 거래 목록 - GET /record
+* 기간내 거래 내역 - GET /record/sum
+
+* 지불수단 추가 - POST /method
+* 지불수단 수정 - PUT /method?id=method:1721395333
+* 지불수단 삭제 - DELETE /method?id=method:1721395333
+* 지불수단 목록 - GET /method
 
 
 # Todos
