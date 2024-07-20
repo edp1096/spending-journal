@@ -6,16 +6,30 @@
 
     <title>Spending journal</title>
 
-    <!-- <link rel="stylesheet" href="assets/css/pico.min.css"> -->
+    <link rel="stylesheet" href="assets/css/pico.min.css">
     <script src="assets/js/alpine.min.js" defer></script>
 </head>
 
 <body x-data="allData">
     <h1>지출기입장</h1>
 
+    <div x-data="{ open: true }" id="password-gate-container">
+        <div id="password-gate" x-show="open" x-transition class="dialog-fullsize">
+            <p>
+                Hello 👋
+            </p>
+
+            <input @keyup.enter="enterPassword" type="password" id="password">
+            <button @click="enterPassword($event)">Ok</button>
+        </div>
+    </div>
+
     <div>
         <button @click="getMethods">Get Pay methods</button>
         <button @click="getRecords">Get Pay records</button>
+        <br>
+
+        <button @click="openInputRecords">Input records</button>
 
         <!-- Payment methods -->
         <ul>
@@ -45,23 +59,62 @@
         <p x-text="`Pay total: ${(records['sum-pay'] ?? 0)}`"></p>
     </div>
 
-    <div x-data="{ open: true }" id="password-gate-container">
-        <div id="password-gate" x-show="open" x-transition>
-            <p>
-                Hello 👋
-            </p>
-
-            <input @keyup.enter="enterPassword" type="password" id="password">
+    <div x-data="{ open: false }" id="input-method-container">
+        <div @keyup.enter="enterPassword" id="input-method" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+            <input name="account-name" placeholder="계정명">
+            <input name="pay-method" placeholder="계정유형">
+            <input name="pay-type" placeholder="지불유형">
+            <input name="currency" placeholder="통화단위">
+            <input name="repay-date" placeholder="결제일">
+            <textarea name="description"></textarea>
             <button @click="enterPassword($event)">Ok</button>
         </div>
+    </div>
+
+    <div x-data="recordData" id="input-record-container">
+        <form x-ref="inputRecord" id="input-record" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+            <input name="transaction-type" placeholder="거래유형">
+
+            <input name="pay-method" list="method-list" placeholder="계정">
+            <datalist id="method-list">
+                <option value="국민은행">
+                <option value="우리카드">
+                <option value="하나은행">
+                <option value="농협">
+                <option value="신한">
+                <option value="삼성카드">
+            </datalist>
+            <button @click="alert('hello');return false" class="clear" type="button">X</button>
+
+            <input name="currency" placeholder="통화단위" required>
+            <input name="category" placeholder="분류" required>
+            <input name="date" placeholder="거래일" type="date">
+            <input name="time" placeholder="거래시간" type="time">
+            <textarea name="description"></textarea>
+            <button @click="setRecord($event)">Ok</button>
+        </form>
     </div>
 </body>
 
 <script>
+
+    function checkFormValidation(form, event) {
+        event.preventDefault()
+        if (event.key == "Enter" && (event.ctrlKey || event.altKey)) {
+            return false
+        }
+
+        if (!form.checkValidity()) {
+            form.reportValidity()
+            return false
+        }
+    }
     const allData = () => {
         const initializer = {
             methods: [],
             records: {},
+            openInputRecord: false,
+            recordData: { open: false, record: {} },
             async getMethods() {
                 const uri = `http://localhost:8080/method`
 
@@ -79,6 +132,16 @@
                     this.records = []
                     this.records = await r.json()
                 }
+            },
+            openInputRecords() {
+                const inputRecord = Alpine.$data(document.querySelector("#input-record-container"))
+                inputRecord.open = true
+            },
+            async setRecord(event) {
+                if (!checkFormValidation(this.$refs.inputRecord, event)) { return false }
+
+                const inputRecord = document.querySelector("#input-record")
+                console.log(inputRecord.querySelector("input[name='currency']").value)
             },
             init() { }
         }
@@ -120,13 +183,35 @@
 </script>
 
 <style>
-    #password-gate {
+    button {
+        padding: 0.5em;
+    }
+
+    textarea {
+        height: 13em;
+    }
+
+    .dialog-fullsize {
         position: absolute;
         width: 100%;
         height: 100%;
-        background-color: thistle;
+        background-color: var(--pico-background-color);
         top: 0;
         left: 0;
+    }
+
+    .dialog-add-edit {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .dialog-add-edit button.clear {
+        position: relative;
+        width: 2em;
+        padding: 5px 10px;
+        right: calc(-100% + 2.5em);
+        top: -3.7em;
     }
 </style>
 

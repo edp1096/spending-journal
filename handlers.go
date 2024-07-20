@@ -14,6 +14,15 @@ func setupDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if bleveIndex != nil {
+		bleveIndex.Close()
+		bleveIndex = nil
+	}
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+
 	err := initBadgerDB(password)
 	if err != nil {
 		// log.Printf("Failed to initialize BadgerDB: %v", err)

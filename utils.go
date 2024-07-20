@@ -36,11 +36,8 @@ func getSalt(filename string) ([]byte, error) {
 }
 
 func validateMethod(method Method) error {
-	if method.Name == "" {
+	if method.AccountName == "" {
 		return fmt.Errorf("name is required")
-	}
-	if method.PayMethod == "" {
-		return fmt.Errorf("pay-method is required")
 	}
 	if method.PayType == "" {
 		return fmt.Errorf("pay-type is required")

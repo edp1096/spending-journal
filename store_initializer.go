@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -29,6 +30,9 @@ func initBadgerDB(password string) error {
 	opts.Logger = nil
 
 	db, err = badger.Open(opts)
+	if err != nil {
+		db = nil
+	}
 	return err
 }
 
@@ -46,6 +50,11 @@ func initBleveIndex() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if db == nil {
+		bleveIndex = nil
+		return errors.New("db is not set")
 	}
 
 	return db.View(func(txn *badger.Txn) error {
