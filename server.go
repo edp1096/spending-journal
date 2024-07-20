@@ -26,7 +26,7 @@ func SetupServer() {
 	mux.HandleFunc("POST /record", addRecordHandler)
 	mux.HandleFunc("DELETE /record", deleteRecordHandler)
 	mux.HandleFunc("PUT /record", updateRecordHandler)
-	mux.HandleFunc("GET /record", searchRecordHandler)
+	mux.HandleFunc("GET /record", getRecordHandler)
 	mux.HandleFunc("GET /record/sum", getSumHandler)
 
 	mux.HandleFunc("GET /", handleStaticFiles)

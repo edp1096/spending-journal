@@ -99,12 +99,18 @@ Content-Type: application/json
     "amount": 12500,
     "category": "식비",
     "description": "아점",
-    "date": "2024-07-17",
+    "date": "2024-07-19",
     "time": "11:20"
 }
 
-### get list pays
-GET {{uri}}/record?q=record_type_pay HTTP/1.1
+### get record list
+GET {{uri}}/record?q=record:&page=1&pageSize=1000 HTTP/1.1
+
+### get record list pays only
+GET {{uri}}/record?q=record_type_pay&page=1&pageSize=1000 HTTP/1.1
+
+### get record list incomes only
+GET {{uri}}/record?q=record_type_income&page=1&pageSize=1000 HTTP/1.1
 
 ### search
 GET {{uri}}/record?q=record_type_pay%20아점&queryType=AND&page=1&pageSize=100 HTTP/1.1

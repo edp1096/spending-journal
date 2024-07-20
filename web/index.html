@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>Spending journal</title>
+
     <!-- <link rel="stylesheet" href="assets/css/pico.min.css"> -->
     <script src="assets/js/alpine.min.js" defer></script>
 </head>
@@ -13,7 +15,9 @@
 
     <div>
         <button @click="getMethods">Get Pay methods</button>
+        <button @click="getRecords">Get Pay records</button>
 
+        <!-- Payment methods -->
         <ul>
             <template x-for="m in methods">
                 <li>
@@ -24,13 +28,31 @@
                 </li>
             </template>
         </ul>
+
+        <!-- Payment records -->
+        <ul>
+            <template x-for="r in records.records">
+                <li>
+                    <span x-text="`${r.date} ${r.time}`"></span> /
+                    <span x-text="r.category"></span> /
+                    <span x-text="r.amount"></span> /
+                    <span x-text="r.description"></span>
+                </li>
+            </template>
+        </ul>
+
+        <p x-text="`Income total: ${(records['sum-income'] ?? 0)}`"></p>
+        <p x-text="`Pay total: ${(records['sum-pay'] ?? 0)}`"></p>
     </div>
 
-    <button @click="openPasswordGate()">Toggle</button>
-    <div x-data="{ open: false }" id="password-gate-container">
+    <div x-data="{ open: true }" id="password-gate-container">
         <div id="password-gate" x-show="open" x-transition>
-            Hello 👋
-            <button @click="open = !open">X</button>
+            <p>
+                Hello 👋
+            </p>
+
+            <input @keyup.enter="enterPassword" type="password" id="password">
+            <button @click="enterPassword($event)">Ok</button>
         </div>
     </div>
 </body>
@@ -39,6 +61,7 @@
     const allData = () => {
         const initializer = {
             methods: [],
+            records: {},
             flushStaticMethods() {
                 const methods = this.$root.querySelectorAll("li[is-static]")
                 for (const s of methods) { s.remove() }
@@ -52,7 +75,18 @@
                 const r = await fetch(uri)
                 if (r.ok) {
                     this.methods = await r.json()
-                    console.log(this.methods)
+                }
+            },
+            async getRecords() {
+                this.flushStaticMethods()
+                this.records = []
+
+                const uri = `http://localhost:8080/record?q=record:&pageSize=1000`
+
+                const r = await fetch(uri)
+                if (r.ok) {
+                    this.records = await r.json()
+                    console.log(this.records)
                 }
             },
             init() { }
@@ -64,9 +98,34 @@
     function openPasswordGate() {
         const passwordGate = Alpine.$data(document.querySelector("#password-gate-container"))
         passwordGate.open = true
+
+        document.querySelector("#password").value = ""
     }
 
-    document.addEventListener('alpine:initialized', () => { openPasswordGate() })
+    async function enterPassword(event) {
+        if (event.key == "Enter" && (event.ctrlKey || event.altKey)) {
+            return false
+        }
+
+        const password = document.querySelector("#password").value
+        const uri = `http://localhost:8080/setup/db?password=${password}`
+
+        const r = await fetch(uri)
+        if (r.ok) {
+            const response = await r.json()
+            if (response.status == "success") {
+                const passwordGate = Alpine.$data(document.querySelector("#password-gate-container"))
+                passwordGate.open = false
+
+                return
+            }
+        }
+
+        alert("Wrong password")
+        return false
+    }
+
+    document.addEventListener('alpine:initialized', () => { })
 </script>
 
 <style>

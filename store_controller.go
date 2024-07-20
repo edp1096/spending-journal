@@ -200,7 +200,7 @@ func updateRecord(id string, updatedRecord Record) error {
 	return err
 }
 
-func searchRecordsByDescription(queries []string, page, pageSize int, queryType string) ([]Record, float64, float64, int, error) {
+func getRecords(queries []string, page, pageSize int, queryType string) ([]Record, float64, float64, int, error) {
 	var results []Record
 	var totalPay float64 = 0
 	var totalIncome float64 = 0
@@ -219,7 +219,8 @@ func searchRecordsByDescription(queries []string, page, pageSize int, queryType 
 	search := bleve.NewSearchRequest(boolQuery)
 	search.Size = pageSize
 	search.From = (page - 1) * pageSize
-	search.SortBy([]string{"-_score"})
+	search.SortBy([]string{"date", "time", "_score"}) // SORT ASC
+	// search.SortBy([]string{"-_score"}) // SORT DESC
 
 	searchResults, err := bleveIndex.Search(search)
 	if err != nil {

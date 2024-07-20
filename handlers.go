@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,14 +16,20 @@ func setupDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := initBadgerDB(password)
 	if err != nil {
-		log.Printf("Failed to initialize BadgerDB: %v", err)
-		http.Error(w, "Failed to initialize database", http.StatusInternalServerError)
+		// log.Printf("Failed to initialize BadgerDB: %v", err)
+
+		httpStatus := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "Encryption key mismatch") {
+			httpStatus = http.StatusBadRequest
+		}
+
+		http.Error(w, "Failed to initialize database", httpStatus)
 		return
 	}
 
 	err = initBleveIndex()
 	if err != nil {
-		log.Printf("Failed to initialize Bleve index: %v", err)
+		// log.Printf("Failed to initialize Bleve index: %v", err)
 		http.Error(w, "Failed to initialize search index", http.StatusInternalServerError)
 		return
 	}
@@ -44,12 +49,14 @@ func addMethodHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = addMethod(method)
 	if err != nil {
-		log.Printf("Failed to add method: %v", err)
+		// log.Printf("Failed to add method: %v", err)
+
+		httpStatus := http.StatusInternalServerError
 		if strings.Contains(err.Error(), "required") {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			http.Error(w, "Failed to add method", http.StatusInternalServerError)
+			httpStatus = http.StatusBadRequest
 		}
+
+		http.Error(w, "Failed to add method", httpStatus)
 		return
 	}
 
@@ -126,12 +133,14 @@ func addRecordHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = addRecord(record)
 	if err != nil {
-		log.Printf("Failed to add record: %v", err)
+		// log.Printf("Failed to add record: %v", err)
+
+		httpStatus := http.StatusInternalServerError
 		if strings.Contains(err.Error(), "required") {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			http.Error(w, "Failed to add record", http.StatusInternalServerError)
+			httpStatus = http.StatusBadRequest
 		}
+
+		http.Error(w, "Failed to add record", httpStatus)
 		return
 	}
 
@@ -186,7 +195,7 @@ func updateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
-func searchRecordHandler(w http.ResponseWriter, r *http.Request) {
+func getRecordHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	if query == "" {
 		http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
@@ -205,13 +214,14 @@ func searchRecordHandler(w http.ResponseWriter, r *http.Request) {
 		page = 1
 	}
 	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
-	if pageSize < 1 || pageSize > 100 {
+	// if pageSize < 1 || pageSize > 100 {
+	if pageSize < 1 {
 		pageSize = 10
 	}
 
-	records, sumPay, sumIncome, totalCount, err := searchRecordsByDescription(queries, page, pageSize, queryType)
+	records, sumPay, sumIncome, totalCount, err := getRecords(queries, page, pageSize, queryType)
 	if err != nil {
-		log.Printf("Failed to search records: %v", err)
+		// log.Printf("Failed to search records: %v", err)
 		http.Error(w, "Failed to search records", http.StatusInternalServerError)
 		return
 	}
@@ -246,7 +256,7 @@ func getSumHandler(w http.ResponseWriter, r *http.Request) {
 
 	records, sumPay, sumIncome, err := getSumByPeriod(startDate, endDate)
 	if err != nil {
-		log.Printf("Failed to get sum: %v", err)
+		// log.Printf("Failed to get sum: %v", err)
 		http.Error(w, "Failed to calculate sum", http.StatusInternalServerError)
 		return
 	}
