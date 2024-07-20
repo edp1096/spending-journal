@@ -35,9 +35,10 @@
         <ul>
             <template x-for="m in methods">
                 <li>
-                    <span x-text="m.name"></span> /
-                    <span x-text="m['pay-method']"></span> /
+                    <span x-text="m['account-name']"></span> /
                     <span x-text="m['pay-type']"></span> /
+                    <span x-text="m.currency"></span> /
+                    <span x-text="m['repay-date']"></span> /
                     <span x-text="m.description"></span>
                 </li>
             </template>

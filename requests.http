@@ -12,7 +12,7 @@ Content-Type: application/json
 
 {
     "account-name": "KB국민",
-    "pay-type": "check-card",
+    "pay-type": "direct",
     "currency": "KRW",
     "repay-date": "",
     "description": "주 카드"
@@ -27,7 +27,7 @@ Content-Type: application/json
 
 {
     "account-name": "KB체크카드",
-    "pay-type": "check-card",
+    "pay-type": "direct",
     "currency": "KRW",
     "repay-date": "",
     "description": "주 카드"
