@@ -11,8 +11,7 @@ POST {{uri}}/method HTTP/1.1
 Content-Type: application/json
 
 {
-    "name": "KB국민",
-    "pay-method": "check-card",
+    "account-name": "KB국민",
     "pay-type": "check-card",
     "currency": "KRW",
     "repay-date": "",
@@ -28,7 +27,6 @@ Content-Type: application/json
 
 {
     "account-name": "KB체크카드",
-    "pay-method": "check-card",
     "pay-type": "check-card",
     "currency": "KRW",
     "repay-date": "",
