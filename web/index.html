@@ -62,29 +62,23 @@
         const initializer = {
             methods: [],
             records: {},
-            flushStaticMethods() {
-                const methods = this.$root.querySelectorAll("li[is-static]")
-                for (const s of methods) { s.remove() }
-            },
             async getMethods() {
-                this.flushStaticMethods()
-                this.methods = []
-
                 const uri = `http://localhost:8080/method`
 
                 const r = await fetch(uri)
                 if (r.ok) {
+                    this.methods = []
                     this.methods = await r.json()
                 }
             },
             async getRecords() {
-                this.flushStaticMethods()
-                this.records = []
-
                 const uri = `http://localhost:8080/record?q=record:&pageSize=1000`
 
                 const r = await fetch(uri)
-                if (r.ok) { this.records = await r.json() }
+                if (r.ok) {
+                    this.records = []
+                    this.records = await r.json()
+                }
             },
             init() { }
         }
