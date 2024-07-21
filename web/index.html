@@ -9,10 +9,82 @@
     <link rel="stylesheet" href="assets/css/pico.min.css">
     <link rel="stylesheet" href="assets/css/pico.colors.min.css">
     <script src="assets/js/alpine.min.js" defer></script>
+
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 
 <body x-data="allData">
-    <h1>지출기입장</h1>
+    <div class="main-container">
+        <div class="main-header-container">
+            <h2>지출기입장</h2>
+
+            <div class="header-button-container">
+                <button @click="getMethods">Pay methods</button>
+                <button @click="getRecords">Pay records</button>
+                <br>
+                <button @click="openInputRecords">Add record</button>
+            </div>
+        </div>
+
+        <!-- Payment methods -->
+        <template x-if="methods.length > 0">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <template x-if="methods && methods.length > 0">
+                            <tr>
+                                <th>계정 이름</th>
+                                <th>계정 유형</th>
+                                <th>결제일</th>
+                            </tr>
+                        </template>
+                    </thead>
+                    <tbody>
+                        <template x-for="m in methods">
+                            <tr>
+                                <td x-text="m['account-name']"></td>
+                                <td x-text="m['pay-type']"></td>
+                                <td x-text="m['repay-date']"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+
+        <!-- Payment records -->
+        <template x-if="records.records && records.records.length > 0">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <template x-if="records.records && records.records.length > 0">
+                            <tr>
+                                <th>일시</th>
+                                <th>분류</th>
+                                <th>금액</th>
+                            </tr>
+                        </template>
+                    </thead>
+                    <tbody>
+                        <template x-for="r in records.records">
+                            <tr>
+                                <td x-text="`${r.date} ${r.time}`"></td>
+                                <td x-text="r.category"></td>
+                                <td x-text="r.amount"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+
+        <hr>
+
+        <div class="summary-container">
+            <span x-text="`Income total: ${(records['sum-income'] ?? 0)}`"></span>
+            <span x-text="`Pay total: ${(records['sum-pay'] ?? 0)}`"></span>
+        </div>
+    </div>
 
     <div x-data="{ open: true }" x-init="$refs.inputPassword.focus()" id="password-gate-container">
         <div id="password-gate" x-show="open" x-transition class="dialog-fullsize dialog-enter-password">
@@ -23,41 +95,6 @@
             <input x-ref="inputPassword" @keyup.enter="enterPassword" type="password" id="password" placeholder="Password">
             <button @click="enterPassword($event)">Ok</button>
         </div>
-    </div>
-
-    <div>
-        <button @click="getMethods">Get Pay methods</button>
-        <button @click="getRecords">Get Pay records</button>
-        <br>
-
-        <button @click="openInputRecords">Input records</button>
-
-        <!-- Payment methods -->
-        <ul>
-            <template x-for="m in methods">
-                <li>
-                    <span x-text="m['account-name']"></span> /
-                    <span x-text="m['pay-type']"></span> /
-                    <span x-text="m['repay-date']"></span>
-                </li>
-            </template>
-        </ul>
-
-        <!-- Payment records -->
-        <ul>
-            <template x-for="r in records.records">
-                <li>
-                    <span x-text="`${r.date} ${r.time}`"></span> /
-                    <span x-text="r.category"></span> /
-                    <span x-text="r.amount"></span>
-                </li>
-            </template>
-        </ul>
-
-        <hr>
-
-        <p x-text="`Income total: ${(records['sum-income'] ?? 0)}`"></p>
-        <p x-text="`Pay total: ${(records['sum-pay'] ?? 0)}`"></p>
     </div>
 
     <div x-data="{ open: false }" id="input-method-container">
@@ -72,8 +109,10 @@
         </div>
     </div>
 
-    <div x-data="recordData" id="input-record-container">
+    <div x-data="recordData">
         <form x-ref="inputRecord" id="input-record" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+            <h2>거래 입력</h2>
+
             <select x-model="record['transaction-type']">
                 <option value="record_type_pay">지출</option>
                 <option value="record_type_income">수입</option>
@@ -108,8 +147,10 @@
             <input x-model="record.time" class="half" type="time" placeholder="거래시간">
             <textarea x-model="record.description"></textarea>
 
-            <button @click="open = !open" type="button" class="bg-red">Cancel</button>
-            <button @click="setRecord($event)" type="button">Ok</button>
+            <div class="dialog-button-container">
+                <button @click="open = !open" type="button" class="bg-red">Cancel</button>
+                <button @click="setRecord($event)" type="button">Ok</button>
+            </div>
         </form>
     </div>
 </body>
@@ -133,7 +174,6 @@
         const initializer = {
             methods: [],
             records: {},
-            openInputRecord: false,
             recordData: {
                 open: false,
                 numberStep: { "USD": "0.01", "KRW": "1" },
@@ -149,6 +189,7 @@
                 const r = await fetch(uri)
                 if (r.ok) {
                     this.methods = []
+                    this.records = []
                     this.methods = await r.json()
                 }
             },
@@ -157,6 +198,7 @@
 
                 const r = await fetch(uri)
                 if (r.ok) {
+                    this.methods = []
                     this.records = []
                     this.records = await r.json()
                 }
@@ -166,11 +208,10 @@
                 const currentDate = now.toLocaleDateString([], { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\.\s/g, '-').replace(/\./g, '')
                 const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
 
-                const inputRecord = Alpine.$data(document.querySelector("#input-record-container"))
-                inputRecord.record.date = currentDate
-                inputRecord.record.time = currentTime
+                this.recordData.record.date = currentDate
+                this.recordData.record.time = currentTime
 
-                inputRecord.open = true
+                this.recordData.open = true
             },
             async setRecord(event) {
                 if (!checkFormValidation(this.$refs.inputRecord, event)) { return false }
@@ -235,93 +276,5 @@
 
     document.addEventListener('alpine:init', () => { })
 </script>
-
-<style>
-    body {
-        padding: 0.5em;
-    }
-
-    button,
-    .dialog-add-edit button {
-        min-width: 7em;
-        padding: 0.3em;
-        margin-top: 0.3em;
-        margin-bottom: 0.3em;
-    }
-
-    .bg-red {
-        background: var(--pico-color-red-500);
-        border-color: transparent;
-    }
-
-    textarea {
-        height: 10em;
-    }
-
-    .dialog-fullsize {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: var(--pico-background-color);
-        padding: 0.5em;
-        top: 0;
-        left: 0;
-    }
-
-    .dialog-enter-password {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: stretch;
-        flex-wrap: nowrap;
-    }
-
-    .dialog-add-edit {
-        display: flex;
-        flex-direction: row;
-        align-content: flex-start;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        padding: 0.5em;
-    }
-
-    .dialog-add-edit button.clear {
-        position: relative;
-        width: 2em;
-        min-width: unset;
-        padding: 5px 10px;
-        margin: 0;
-        right: calc(-100% + 2.5em);
-        top: -3.7em;
-    }
-
-    .half {
-        width: calc(50% - 0.25em) !important;
-    }
-
-    .one {
-        width: calc(10% - 0.25em) !important;
-    }
-
-    .two {
-        width: calc(20% - 0.25em) !important;
-    }
-
-    .third {
-        width: calc(30% - 0.25em) !important;
-    }
-
-    .forth {
-        width: calc(40% - 0.25em) !important;
-    }
-
-    .sixth {
-        width: calc(60% - 0.25em) !important;
-    }
-
-    .seventh {
-        width: calc(70% - 0.25em) !important;
-    }
-</style>
 
 </html>
