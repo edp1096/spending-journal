@@ -31,7 +31,7 @@
         <!-- Payment accounts -->
         <template x-if="showAccountList">
             <div class="table-container">
-                <button @click="openInputAccount" class="full-size bg-sand">Add account</button>
+                <button @click="openInputAccount" class="full-size bg-sand">Add account➕</button>
 
                 <table>
                     <thead>
@@ -40,15 +40,19 @@
                                 <th>계정 이름</th>
                                 <th>계정 유형</th>
                                 <th>결제일</th>
+                                <th>삭제</th>
                             </tr>
                         </template>
                     </thead>
                     <tbody>
-                        <template x-for="m in accounts">
-                            <tr>
+                        <template x-for="(m, index) in accounts" :key="index">
+                            <tr @click="openInputAccount(index)">
                                 <td x-text="m['account-name']"></td>
                                 <td x-text="m['pay-type']"></td>
                                 <td x-text="m['repay-day']"></td>
+                                <td class="one">
+                                    <button @click.stop="deleteAccount(index)" type="button" class="bg-red">X</button>
+                                </td>
                             </tr>
                         </template>
                     </tbody>
@@ -59,7 +63,7 @@
         <!-- Payment records -->
         <template x-if="showRecordList">
             <div class="table-container">
-                <button @click="openInputRecord" class="full-size bg-sand">Add record</button>
+                <button @click="openInputRecord" class="full-size bg-sand">Add record➕</button>
 
                 <table>
                     <thead>
@@ -115,9 +119,9 @@
     <!-- Add/Edit pay account -->
     <div x-data="accountData" @keyup.escape.window="open = false">
         <form x-ref="accountForm" id="input-account" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
-            <h2>계정(카드/통장) 정보 입력</h2>
+            <h2>계정 정보 입력/수정</h2>
 
-            <input x-model="account['account-name']" placeholder="계정이름">
+            <input x-model="account['account-name']" :change="checkAccountNameDuplicate()" placeholder="계정 이름(카드/통장/지갑 등)" required>
             <select x-model="account['pay-type']">
                 <option value="direct">직불/현금</option>
                 <option value="credit">신용/외상</option>
@@ -130,11 +134,11 @@
                 </template>
             </select>
 
-            <textarea name="account.description" placeholder="메모"></textarea>
+            <textarea x-model="account.description" placeholder="메모"></textarea>
 
             <div class="dialog-button-container">
-                <button @click="open = !open" type="button" class="bg-red">Cancel</button>
-                <button @click="setAccount($event)" type="button">Ok</button>
+                <button @click.stop="open = !open" type="button" class="bg-red">Cancel</button>
+                <button @click.stop="setAccount($event)" :disable="notOK" type="button">Ok</button>
             </div>
         </form>
     </div>
@@ -155,7 +159,7 @@
             </select>
 
             <div class="datalist-input-container">
-                <input x-model="accountName" x-ref="payAccount" list="account-list" placeholder="계정" required>
+                <input x-model="accountName" :change="setRecordPayType" x-ref="payAccount" list="account-list" placeholder="계정" required>
                 <datalist id="account-list">
                     <template x-for="(a, index) in accounts" :key="index">
                         <option :value="a['account-name']"></option>

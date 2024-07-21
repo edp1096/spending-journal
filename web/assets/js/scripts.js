@@ -14,6 +14,8 @@ const payType = {
     "credit": "신용",
 }
 
+let exchangeRate = 1300
+
 function checkFormValidation(form, event) {
     event.preventDefault()
     if (event.key == "Enter" && (event.ctrlKey || event.altKey)) {
@@ -35,6 +37,7 @@ const allData = () => {
         accounts: [],
         accountData: {
             open: false,
+            notOK: false,
             account: {}
         },
         recordsResponse: {},
@@ -67,7 +70,7 @@ const allData = () => {
                 this.$event.target.classList.add('contrast')
             }
         },
-        openInputAccount() {
+        openInputAccount(index = null) {
             this.accountData.account = {}
 
             this.accountData.account["account-name"] = ""
@@ -75,12 +78,27 @@ const allData = () => {
             this.accountData.account["repay-day"] = ""
             this.accountData.account.description = ""
 
+            if (index >= 0) {
+                this.accountData.account["account-id"] = this.accounts[index].id
+                this.accountData.account["account-name"] = this.accounts[index]["account-name"]
+                this.accountData.account["pay-type"] = this.accounts[index]["pay-type"]
+                this.accountData.account["repay-day"] = this.accounts[index]["repay-day"]
+                this.accountData.account.description = this.accounts[index].description
+            }
+
             this.accountData.open = true
         },
         async requestSetAccount() {
-            const uri = `${addr}/account`
+            let requestMethod = "POST"
+            let params = ""
+            if (this.accountData.account["account-id"]) {
+                requestMethod = "PUT"
+                params = `?id=${this.accountData.account["account-id"]}`
+            }
+
+            const uri = `${addr}/account${params}`
             const r = await fetch(uri, {
-                method: "POST",
+                method: requestMethod,
                 headers: { "content-Type": "application/json" },
                 body: JSON.stringify(this.accountData.account)
             })
@@ -100,12 +118,33 @@ const allData = () => {
         async setAccount(event) {
             if (!checkFormValidation(this.$refs.accountForm, event)) { return false }
 
-            this.accountData.account.amount = parseFloat(this.accountData.account.amount)
-            if (this.accountData.account.currency == "KRW") {
-                this.accountData.account.amount = parseInt(this.accountData.account.amount)
+            if (this.checkAccountNameDuplicate()) {
+                alert("같은 이름의 계정이 있습니다.")
+                return false
             }
 
             await this.requestSetAccount()
+        },
+        async deleteAccount(index) {
+            if (!this.accounts[index].id) {
+                alert("Wrong action")
+                return false
+            }
+
+            const uri = `${addr}/account?id=${this.accounts[index].id}`
+            const r = await fetch(uri, { method: "DELETE" })
+            if (r.ok) {
+                const response = await r.json()
+
+                if (response.status == "success") {
+                    await this.getAccounts()
+                    this.accountData.open = false
+                    return
+                }
+            }
+
+            alert("Fail to delete record")
+            return false
         },
         async getRecords() {
             const uri = `${addr}/record?q=record:&pageSize=1000`
@@ -245,6 +284,34 @@ const allData = () => {
 
             alert("Fail to delete record")
             return false
+        },
+        async checkAccountNameDuplicate() {
+            if (this.accountData.account["account-name"] == "") {
+                return
+            }
+
+            for (const a of this.accounts) {
+                if (a["account-name"] == this.accountData.account["account-name"]) {
+                    return false
+                }
+            }
+
+            return true
+        },
+        async setRecordPayType() {
+            if (this.accountName == "") {
+                this.recordData.record["pay-type"] = "direct"
+                return
+            }
+            for (const a of this.accounts) {
+                if (a["account-name"] == this.accountName) {
+                    this.recordData.record["pay-type"] = a["pay-type"]
+                    if (a["pay-type"] == "hybrid") {
+                        this.recordData.record["pay-type"] = "direct"
+                    }
+                    break
+                }
+            }
         },
         init() { }
     }
