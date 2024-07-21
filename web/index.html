@@ -48,7 +48,7 @@
                         <template x-for="(m, index) in accounts" :key="index">
                             <tr @click="openInputAccount(index)">
                                 <td x-text="m['account-name']"></td>
-                                <td x-text="m['pay-type']"></td>
+                                <td x-text="`${payType[m['pay-type']]}`"></td>
                                 <td x-text="m['repay-day']"></td>
                                 <td class="one">
                                     <button @click.stop="deleteAccount(index)" type="button" class="bg-red">X</button>
@@ -125,6 +125,7 @@
             <select x-model="account['pay-type']">
                 <option value="direct">직불/현금</option>
                 <option value="credit">신용/외상</option>
+                <option value="hybrid">겸용(리볼빙)</option>
             </select>
 
             <select x-model="account['repay-day']">

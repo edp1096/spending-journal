@@ -12,6 +12,7 @@ const currencyCode = {
 const payType = {
     "direct": "선불",
     "credit": "신용",
+    "hybrid": "복합",
 }
 
 let exchangeRate = 1300
@@ -284,14 +285,17 @@ const allData = () => {
             alert("Fail to delete record")
             return false
         },
-        async checkAccountNameDuplicate() {
+        checkAccountNameDuplicate() {
             if (this.accountData.account["account-name"] == "") {
                 return
             }
 
             for (const a of this.accounts) {
                 if (a["account-name"] == this.accountData.account["account-name"]) {
-                    return false
+                    if (a.id == this.accountData.account["account-id"]) {
+                        // 같은 row는 수정이므로 중복체크 안하고 패스
+                        return false
+                    }
                 }
             }
 
