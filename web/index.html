@@ -7,19 +7,20 @@
     <title>Spending journal</title>
 
     <link rel="stylesheet" href="assets/css/pico.min.css">
+    <link rel="stylesheet" href="assets/css/pico.colors.min.css">
     <script src="assets/js/alpine.min.js" defer></script>
 </head>
 
 <body x-data="allData">
     <h1>지출기입장</h1>
 
-    <div x-data="{ open: true }" id="password-gate-container">
-        <div id="password-gate" x-show="open" x-transition class="dialog-fullsize">
+    <div x-data="{ open: true }" x-init="$refs.inputPassword.focus()" id="password-gate-container">
+        <div id="password-gate" x-show="open" x-transition class="dialog-fullsize dialog-enter-password">
             <p>
-                Hello 👋
+                Please enter password 🔐
             </p>
 
-            <input @keyup.enter="enterPassword" type="password" id="password">
+            <input x-ref="inputPassword" @keyup.enter="enterPassword" type="password" id="password" placeholder="Password">
             <button @click="enterPassword($event)">Ok</button>
         </div>
     </div>
@@ -37,9 +38,7 @@
                 <li>
                     <span x-text="m['account-name']"></span> /
                     <span x-text="m['pay-type']"></span> /
-                    <span x-text="m.currency"></span> /
-                    <span x-text="m['repay-date']"></span> /
-                    <span x-text="m.description"></span>
+                    <span x-text="m['repay-date']"></span>
                 </li>
             </template>
         </ul>
@@ -50,11 +49,12 @@
                 <li>
                     <span x-text="`${r.date} ${r.time}`"></span> /
                     <span x-text="r.category"></span> /
-                    <span x-text="r.amount"></span> /
-                    <span x-text="r.description"></span>
+                    <span x-text="r.amount"></span>
                 </li>
             </template>
         </ul>
+
+        <hr>
 
         <p x-text="`Income total: ${(records['sum-income'] ?? 0)}`"></p>
         <p x-text="`Pay total: ${(records['sum-pay'] ?? 0)}`"></p>
@@ -74,9 +74,12 @@
 
     <div x-data="recordData" id="input-record-container">
         <form x-ref="inputRecord" id="input-record" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
-            <input name="transaction-type" placeholder="거래유형">
+            <select x-model="record['transaction-type']">
+                <option value="record_type_pay">지출</option>
+                <option value="record_type_income">수입</option>
+            </select>
 
-            <input name="pay-method" list="method-list" placeholder="계정">
+            <input x-model="record['pay-method']" x-ref="payMethod" list="method-list" placeholder="계정" required>
             <datalist id="method-list">
                 <option value="국민은행">
                 <option value="우리카드">
@@ -85,20 +88,33 @@
                 <option value="신한">
                 <option value="삼성카드">
             </datalist>
-            <button @click="alert('hello');return false" class="clear" type="button">X</button>
+            <button @click="record['pay-method']=''; $refs.payMethod.focus()" class="clear" type="button">X</button>
 
-            <input name="currency" placeholder="통화단위" required>
-            <input name="category" placeholder="분류" required>
-            <input name="date" placeholder="거래일" type="date">
-            <input name="time" placeholder="거래시간" type="time">
-            <textarea name="description"></textarea>
-            <button @click="setRecord($event)">Ok</button>
+            <input x-model="record.category" list="category-list" placeholder="분류" required>
+            <datalist id="category-list">
+                <option value="식비">
+                <option value="간식">
+                <option value="교통">
+                <option value="담배">
+            </datalist>
+
+            <select x-model="record.currency" class="third">
+                <option value="KRW">원</option>
+                <option value="USD">달러</option>
+            </select>
+            <input x-model="record.amount" type="number" :step="numberStep[record.currency]" class="seventh" placeholder="금액" required>
+
+            <input x-model="record.date" class="half" type="date" placeholder="거래일">
+            <input x-model="record.time" class="half" type="time" placeholder="거래시간">
+            <textarea x-model="record.description"></textarea>
+
+            <button @click="open = !open" type="button" class="bg-red">Cancel</button>
+            <button @click="setRecord($event)" type="button">Ok</button>
         </form>
     </div>
 </body>
 
 <script>
-
     function checkFormValidation(form, event) {
         event.preventDefault()
         if (event.key == "Enter" && (event.ctrlKey || event.altKey)) {
@@ -109,13 +125,24 @@
             form.reportValidity()
             return false
         }
+
+        return true
     }
+
     const allData = () => {
         const initializer = {
             methods: [],
             records: {},
             openInputRecord: false,
-            recordData: { open: false, record: {} },
+            recordData: {
+                open: false,
+                numberStep: { "USD": "0.01", "KRW": "1" },
+                record: {
+                    "transaction-type": "record_type_pay",
+                    currency: "KRW",
+                    description: ""
+                }
+            },
             async getMethods() {
                 const uri = `http://localhost:8080/method`
 
@@ -135,14 +162,40 @@
                 }
             },
             openInputRecords() {
+                const now = new Date()
+                const currentDate = now.toLocaleDateString([], { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\.\s/g, '-').replace(/\./g, '')
+                const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+
                 const inputRecord = Alpine.$data(document.querySelector("#input-record-container"))
+                inputRecord.record.date = currentDate
+                inputRecord.record.time = currentTime
+
                 inputRecord.open = true
             },
             async setRecord(event) {
                 if (!checkFormValidation(this.$refs.inputRecord, event)) { return false }
 
-                const inputRecord = document.querySelector("#input-record")
-                console.log(inputRecord.querySelector("input[name='currency']").value)
+
+                this.recordData.record.amount = parseInt(this.recordData.record.amount)
+
+                const uri = `http://localhost:8080/record`
+                const r = await fetch(uri, {
+                    method: "POST",
+                    headers: { "content-Type": "application/json" },
+                    body: JSON.stringify(this.recordData.record)
+                })
+                if (r.ok) {
+                    const response = await r.json()
+
+                    if (response.status == "success") {
+                        this.getRecords()
+                        this.recordData.open = !this.recordData.open
+                        return
+                    }
+                }
+
+                alert("Fail to set record")
+                return false
             },
             init() { }
         }
@@ -180,39 +233,94 @@
         return false
     }
 
-    document.addEventListener('alpine:initialized', () => { })
+    document.addEventListener('alpine:init', () => { })
 </script>
 
 <style>
-    button {
+    body {
         padding: 0.5em;
     }
 
+    button,
+    .dialog-add-edit button {
+        min-width: 7em;
+        padding: 0.3em;
+        margin-top: 0.3em;
+        margin-bottom: 0.3em;
+    }
+
+    .bg-red {
+        background: var(--pico-color-red-500);
+        border-color: transparent;
+    }
+
     textarea {
-        height: 13em;
+        height: 10em;
     }
 
     .dialog-fullsize {
         position: absolute;
         width: 100%;
         height: 100%;
-        background-color: var(--pico-background-color);
+        background: var(--pico-background-color);
+        padding: 0.5em;
         top: 0;
         left: 0;
     }
 
-    .dialog-add-edit {
+    .dialog-enter-password {
         display: flex;
         flex-direction: column;
         justify-content: center;
+        align-items: stretch;
+        flex-wrap: nowrap;
+    }
+
+    .dialog-add-edit {
+        display: flex;
+        flex-direction: row;
+        align-content: flex-start;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        padding: 0.5em;
     }
 
     .dialog-add-edit button.clear {
         position: relative;
         width: 2em;
+        min-width: unset;
         padding: 5px 10px;
+        margin: 0;
         right: calc(-100% + 2.5em);
         top: -3.7em;
+    }
+
+    .half {
+        width: calc(50% - 0.25em) !important;
+    }
+
+    .one {
+        width: calc(10% - 0.25em) !important;
+    }
+
+    .two {
+        width: calc(20% - 0.25em) !important;
+    }
+
+    .third {
+        width: calc(30% - 0.25em) !important;
+    }
+
+    .forth {
+        width: calc(40% - 0.25em) !important;
+    }
+
+    .sixth {
+        width: calc(60% - 0.25em) !important;
+    }
+
+    .seventh {
+        width: calc(70% - 0.25em) !important;
     }
 </style>
 
