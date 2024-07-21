@@ -1,11 +1,11 @@
 package server
 
-// Payment method - cash, card. for input completion
-type Method struct {
+// Payment account - cash, card. for input completion
+type Account struct {
 	ID          string `json:"id"`
 	AccountName string `json:"account-name"`
 	PayType     string `json:"pay-type"` // direct, credit, hybrid(revolving)
-	RepayDate   string `json:"repay-date,omitempty"`
+	RepayDay    string `json:"repay-day,omitempty"`
 	Description string `json:"description,omitempty"`
 	RegDTTM     string
 }
@@ -13,9 +13,9 @@ type Method struct {
 // Paymenr record
 type Record struct {
 	ID              string  `json:"id"`
-	TransactionType string  `json:"transaction-type"` // payment, income
-	PayMethod       string  `json:"pay-method"`
-	RepayDate       string  `json:"repay-date,omitempty"`
+	TransactionType string  `json:"transaction-type"` // payment(record_type_pay), income(record_type_income)
+	AccountID       string  `json:"account-id"`
+	PayType         string  `json:"pay-type"` // direct, credit
 	Currency        string  `json:"currency"`
 	Amount          float64 `json:"amount"`
 	Category        string  `json:"category"`

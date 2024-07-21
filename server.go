@@ -16,11 +16,11 @@ func SetupServer() {
 
 	mux.HandleFunc("GET /setup/db", setupDatabaseHandler)
 
-	// Pay method
-	mux.HandleFunc("POST /method", addMethodHandler)
-	mux.HandleFunc("DELETE /method", deleteMethodHandler)
-	mux.HandleFunc("PUT /method", updateMethodHandler)
-	mux.HandleFunc("GET /method", getMethodListHandler)
+	// Pay account
+	mux.HandleFunc("POST /account", addAccountHandler)
+	mux.HandleFunc("DELETE /account", deleteAccountHandler)
+	mux.HandleFunc("PUT /account", updateAccountHandler)
+	mux.HandleFunc("GET /account", getAccountListHandler)
 
 	// Pay record
 	mux.HandleFunc("POST /record", addRecordHandler)

@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="assets/css/pico.colors.min.css">
     <script src="assets/js/alpine.min.js" defer></script>
 
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <script src="assets/js/scripts.js"></script>
 </head>
 
 <body x-data="allData">
@@ -21,19 +22,20 @@
             <h2>지출기입장</h2>
 
             <div class="header-button-container">
-                <button @click="getMethods">Pay methods</button>
-                <button @click="getRecords">Pay records</button>
-                <br>
-                <button @click="openInputRecords">Add record</button>
+                <button @click="showAccounts" class="outline secondary">Accounts</button>
+                <button @click="showRecords" class="outline secondary">Pay records</button>
+                <button class="icon-button">⚙️</button>
             </div>
         </div>
 
-        <!-- Payment methods -->
-        <template x-if="methods.length > 0">
+        <!-- Payment accounts -->
+        <template x-if="showAccountList">
             <div class="table-container">
+                <button @click="openInputAccount" class="full-size bg-sand">Add account</button>
+
                 <table>
                     <thead>
-                        <template x-if="methods && methods.length > 0">
+                        <template x-if="accounts.length > 0">
                             <tr>
                                 <th>계정 이름</th>
                                 <th>계정 유형</th>
@@ -42,11 +44,11 @@
                         </template>
                     </thead>
                     <tbody>
-                        <template x-for="m in methods">
+                        <template x-for="m in accounts">
                             <tr>
                                 <td x-text="m['account-name']"></td>
                                 <td x-text="m['pay-type']"></td>
-                                <td x-text="m['repay-date']"></td>
+                                <td x-text="m['repay-day']"></td>
                             </tr>
                         </template>
                     </tbody>
@@ -55,14 +57,17 @@
         </template>
 
         <!-- Payment records -->
-        <template x-if="records.records && records.records.length > 0">
+        <template x-if="showRecordList">
             <div class="table-container">
+                <button @click="openInputRecord" class="full-size bg-sand">Add record</button>
+
                 <table>
                     <thead>
                         <template x-if="records.records && records.records.length > 0">
                             <tr>
                                 <th>일시</th>
                                 <th>분류</th>
+                                <th>지불</th>
                                 <th>금액</th>
                             </tr>
                         </template>
@@ -72,7 +77,8 @@
                             <tr>
                                 <td x-text="`${r.date} ${r.time}`"></td>
                                 <td x-text="r.category"></td>
-                                <td x-text="r.amount"></td>
+                                <td x-text="`${payType[r['pay-type']]}`"></td>
+                                <td x-text="`${currencyCode[r.currency]} ${r.amount}`"></td>
                             </tr>
                         </template>
                     </tbody>
@@ -89,33 +95,49 @@
     </div>
 
     <!-- Entering password input -->
-    <div x-data="{ open: true }" x-init="$refs.inputPassword.focus()" id="password-gate-container">
+    <div x-data="{ open: true }" x-init="$refs.passwordInput.focus()" id="password-gate-container">
         <div id="password-gate" x-show="open" x-transition class="dialog-fullsize dialog-enter-password">
             <p>
                 Please enter password 🔐
             </p>
 
-            <input x-ref="inputPassword" @keyup.enter="enterPassword" type="password" id="password" placeholder="Password">
-            <button @click="enterPassword($event)">Ok</button>
+            <form x-ref="passwordForm">
+                <input x-ref="passwordInput" type="password" id="password" placeholder="Password" required>
+                <button @click="enterPassword($event)">Ok</button>
+            </form>
         </div>
     </div>
 
     <!-- Add/Edit pay account -->
-    <div x-data="{ open: false }">
-        <div @keyup.enter="enterPassword" id="input-method" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
-            <input name="account-name" placeholder="계정명">
-            <input name="pay-method" placeholder="계정유형">
-            <input name="pay-type" placeholder="지불유형">
-            <input name="currency" placeholder="통화단위">
-            <input name="repay-date" placeholder="결제일">
-            <textarea name="description"></textarea>
-            <button @click="enterPassword($event)">Ok</button>
-        </div>
+    <div x-data="accountData" @keyup.escape.window="open = false">
+        <form x-ref="accountForm" id="input-account" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+            <h2>계정(카드/통장) 정보 입력</h2>
+
+            <input x-model="account['account-name']" placeholder="계정이름">
+            <select x-model="account['pay-type']">
+                <option value="direct">직불/현금</option>
+                <option value="credit">신용/외상</option>
+            </select>
+
+            <select x-model="account['repay-day']">
+                <option value="">월 결제일</option>
+                <template x-for="day in 31" :key="day">
+                    <option :value="day" x-text="day"></option>
+                </template>
+            </select>
+
+            <textarea name="account.description" placeholder="메모"></textarea>
+
+            <div class="dialog-button-container">
+                <button @click="open = !open" type="button" class="bg-red">Cancel</button>
+                <button @click="setAccount($event)" type="button">Ok</button>
+            </div>
+        </form>
     </div>
 
     <!-- Add/Edit record -->
-    <div x-data="recordData">
-        <form x-ref="inputRecord" id="input-record" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+    <div x-data="recordData" @keyup.escape.window="open = false">
+        <form x-ref="recordForm" id="input-record" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
             <h2>거래 입력</h2>
 
             <select x-model="record['transaction-type']">
@@ -123,24 +145,31 @@
                 <option value="record_type_income">수입</option>
             </select>
 
-            <input x-model="record['pay-method']" x-ref="payMethod" list="method-list" placeholder="계정" required>
-            <datalist id="method-list">
-                <option value="국민은행">
-                <option value="우리카드">
-                <option value="하나은행">
-                <option value="농협">
-                <option value="신한">
-                <option value="삼성카드">
-            </datalist>
-            <button @click="record['pay-method']=''; $refs.payMethod.focus()" class="clear" type="button">X</button>
+            <select x-model="record['pay-type']">
+                <option value="direct">직불/현금</option>
+                <option value="credit">신용/외상</option>
+            </select>
 
-            <input x-model="record.category" list="category-list" placeholder="분류" required>
-            <datalist id="category-list">
-                <option value="식비">
-                <option value="간식">
-                <option value="교통">
-                <option value="담배">
-            </datalist>
+            <div class="datalist-input-container">
+                <input x-model="accountName" x-ref="payAccount" list="account-list" placeholder="계정" required>
+                <datalist id="account-list">
+                    <template x-for="(a, index) in accounts" :key="index">
+                        <option :data-index="index" :data-value="a.id" :value="a['account-name']"></option>
+                    </template>
+                </datalist>
+                <button @click="accountName=''; $refs.payAccount.focus()" class="clear" type="button">X</button>
+            </div>
+
+            <div class="datalist-input-container">
+                <input x-model="record.category" x-ref="payCategory" list="category-list" placeholder="분류" required>
+                <datalist id="category-list">
+                    <option value="식비">
+                    <option value="간식">
+                    <option value="교통">
+                    <option value="담배">
+                </datalist>
+                <button @click="record.category=''; $refs.payCategory.focus()" class="clear" type="button">X</button>
+            </div>
 
             <select x-model="record.currency" class="third">
                 <option value="KRW">원</option>
@@ -148,9 +177,9 @@
             </select>
             <input x-model="record.amount" type="number" :step="numberStep[record.currency]" class="seventh" placeholder="금액" required>
 
-            <input x-model="record.date" class="half" type="date" placeholder="거래일">
-            <input x-model="record.time" class="half" type="time" placeholder="거래시간">
-            <textarea x-model="record.description"></textarea>
+            <input x-model="record.date" class="half-size" type="date" placeholder="거래일">
+            <input x-model="record.time" class="half-size" type="time" placeholder="거래시간">
+            <textarea x-model="record.description" placeholder="메모"></textarea>
 
             <div class="dialog-button-container">
                 <button @click="open = !open" type="button" class="bg-red">Cancel</button>
@@ -159,127 +188,5 @@
         </form>
     </div>
 </body>
-
-<script>
-    function checkFormValidation(form, event) {
-        event.preventDefault()
-        if (event.key == "Enter" && (event.ctrlKey || event.altKey)) {
-            return false
-        }
-
-        if (!form.checkValidity()) {
-            form.reportValidity()
-            return false
-        }
-
-        return true
-    }
-
-    const allData = () => {
-        const initializer = {
-            methods: [],
-            records: {},
-            recordData: {
-                open: false,
-                numberStep: { "USD": "0.01", "KRW": "1" },
-                record: {
-                    "transaction-type": "record_type_pay",
-                    currency: "KRW",
-                    description: ""
-                }
-            },
-            async getMethods() {
-                const uri = `http://localhost:8080/method`
-
-                const r = await fetch(uri)
-                if (r.ok) {
-                    this.methods = []
-                    this.records = []
-                    this.methods = await r.json()
-                }
-            },
-            async getRecords() {
-                const uri = `http://localhost:8080/record?q=record:&pageSize=1000`
-
-                const r = await fetch(uri)
-                if (r.ok) {
-                    this.methods = []
-                    this.records = []
-                    this.records = await r.json()
-                }
-            },
-            openInputRecords() {
-                const now = new Date()
-                const currentDate = now.toLocaleDateString([], { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\.\s/g, '-').replace(/\./g, '')
-                const currentTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-
-                this.recordData.record.date = currentDate
-                this.recordData.record.time = currentTime
-
-                this.recordData.open = true
-            },
-            async setRecord(event) {
-                if (!checkFormValidation(this.$refs.inputRecord, event)) { return false }
-
-
-                this.recordData.record.amount = parseInt(this.recordData.record.amount)
-
-                const uri = `http://localhost:8080/record`
-                const r = await fetch(uri, {
-                    method: "POST",
-                    headers: { "content-Type": "application/json" },
-                    body: JSON.stringify(this.recordData.record)
-                })
-                if (r.ok) {
-                    const response = await r.json()
-
-                    if (response.status == "success") {
-                        this.getRecords()
-                        this.recordData.open = !this.recordData.open
-                        return
-                    }
-                }
-
-                alert("Fail to set record")
-                return false
-            },
-            init() { }
-        }
-
-        return initializer
-    }
-
-    function openPasswordGate() {
-        const passwordGate = Alpine.$data(document.querySelector("#password-gate-container"))
-        passwordGate.open = true
-
-        document.querySelector("#password").value = ""
-    }
-
-    async function enterPassword(event) {
-        if (event.key == "Enter" && (event.ctrlKey || event.altKey)) {
-            return false
-        }
-
-        const password = document.querySelector("#password").value
-        const uri = `http://localhost:8080/setup/db?password=${password}`
-
-        const r = await fetch(uri)
-        if (r.ok) {
-            const response = await r.json()
-            if (response.status == "success") {
-                const passwordGate = Alpine.$data(document.querySelector("#password-gate-container"))
-                passwordGate.open = false
-
-                return
-            }
-        }
-
-        alert("Wrong password")
-        return false
-    }
-
-    document.addEventListener('alpine:init', () => { })
-</script>
 
 </html>

@@ -35,11 +35,11 @@ func getSalt(filename string) ([]byte, error) {
 	return salt, nil
 }
 
-func validateMethod(method Method) error {
-	if method.AccountName == "" {
+func validateAccount(account Account) error {
+	if account.AccountName == "" {
 		return fmt.Errorf("name is required")
 	}
-	if method.PayType == "" {
+	if account.PayType == "" {
 		return fmt.Errorf("pay-type is required")
 	}
 
@@ -50,11 +50,11 @@ func validateRecord(record Record) error {
 	if record.TransactionType == "" {
 		return fmt.Errorf("transaction-type is required")
 	}
-	if record.PayMethod == "" {
-		return fmt.Errorf("pay-method is required")
-	}
 	if record.Currency == "" {
 		return fmt.Errorf("currency is required")
+	}
+	if record.PayType == "" {
+		return fmt.Errorf("pay-type is required")
 	}
 	if record.Amount == 0 {
 		return fmt.Errorf("amount is required and must be non-zero")
@@ -62,9 +62,6 @@ func validateRecord(record Record) error {
 	if record.Category == "" {
 		return fmt.Errorf("category is required")
 	}
-	// if record.Description == "" {
-	// 	return fmt.Errorf("description is required")
-	// }
 	if record.Date == "" {
 		return fmt.Errorf("date is required")
 	}

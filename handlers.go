@@ -47,25 +47,25 @@ func setupDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
-func addMethodHandler(w http.ResponseWriter, r *http.Request) {
-	var method Method
+func addAccountHandler(w http.ResponseWriter, r *http.Request) {
+	var account Account
 
-	err := json.NewDecoder(r.Body).Decode(&method)
+	err := json.NewDecoder(r.Body).Decode(&account)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	err = addMethod(method)
+	err = addAccount(account)
 	if err != nil {
-		// log.Printf("Failed to add method: %v", err)
+		// log.Printf("Failed to add account: %v", err)
 
 		httpStatus := http.StatusInternalServerError
 		if strings.Contains(err.Error(), "required") {
 			httpStatus = http.StatusBadRequest
 		}
 
-		http.Error(w, "Failed to add method", httpStatus)
+		http.Error(w, "Failed to add account", httpStatus)
 		return
 	}
 
@@ -73,14 +73,14 @@ func addMethodHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
-func deleteMethodHandler(w http.ResponseWriter, r *http.Request) {
+func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 	recordID := r.URL.Query().Get("id")
 	if recordID == "" {
 		http.Error(w, "'id' is required", http.StatusBadRequest)
 		return
 	}
 
-	err := deleteMethod(recordID)
+	err := deleteAccount(recordID)
 	if err != nil {
 		http.Error(w, "Failed to delete record", http.StatusInternalServerError)
 		return
@@ -90,27 +90,27 @@ func deleteMethodHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
-func updateMethodHandler(w http.ResponseWriter, r *http.Request) {
-	methodID := r.URL.Query().Get("id")
-	if methodID == "" {
+func updateAccountHandler(w http.ResponseWriter, r *http.Request) {
+	accountID := r.URL.Query().Get("id")
+	if accountID == "" {
 		http.Error(w, "'id' is required", http.StatusBadRequest)
 		return
 	}
 
-	var updatedMethod Method
-	err := json.NewDecoder(r.Body).Decode(&updatedMethod)
+	var updatedAccount Account
+	err := json.NewDecoder(r.Body).Decode(&updatedAccount)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	err = validateMethod(updatedMethod)
+	err = validateAccount(updatedAccount)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = updateMethod(methodID, updatedMethod)
+	err = updateAccount(accountID, updatedAccount)
 	if err != nil {
 		http.Error(w, "Failed to update record", http.StatusInternalServerError)
 		return
@@ -120,15 +120,15 @@ func updateMethodHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
-func getMethodListHandler(w http.ResponseWriter, r *http.Request) {
-	methods, err := getMethodList()
+func getAccountListHandler(w http.ResponseWriter, r *http.Request) {
+	accounts, err := getAccountList()
 	if err != nil {
-		http.Error(w, "Failed to get methods", http.StatusInternalServerError)
+		http.Error(w, "Failed to get accounts", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(methods)
+	json.NewEncoder(w).Encode(accounts)
 }
 
 func addRecordHandler(w http.ResponseWriter, r *http.Request) {
@@ -158,13 +158,13 @@ func addRecordHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteRecordHandler(w http.ResponseWriter, r *http.Request) {
-	methodID := r.URL.Query().Get("id")
-	if methodID == "" {
+	accountID := r.URL.Query().Get("id")
+	if accountID == "" {
 		http.Error(w, "'id' is required", http.StatusBadRequest)
 		return
 	}
 
-	err := deleteRecord(methodID)
+	err := deleteRecord(accountID)
 	if err != nil {
 		http.Error(w, "Failed to delete record", http.StatusInternalServerError)
 		return

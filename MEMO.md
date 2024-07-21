@@ -1,7 +1,7 @@
 # 메모
 
 ## 구조체
-* 지불수단 - Method
+* 지불수단 - Account
 * 거래내역 - Record
 
 ## 엔드포인트
@@ -13,13 +13,14 @@
 * 거래 목록 - GET /record
 * 기간내 거래 내역 - GET /record/sum
 
-* 지불수단 추가 - POST /method
-* 지불수단 수정 - PUT /method?id=method:1721395333
-* 지불수단 삭제 - DELETE /method?id=method:1721395333
-* 지불수단 목록 - GET /method
+* 지불수단 추가 - POST /account
+* 지불수단 수정 - PUT /account?id=account:1721395333
+* 지불수단 삭제 - DELETE /account?id=account:1721395333
+* 지불수단 목록 - GET /account
 
 
 # Todos
 * [ ] 지불수단 제어
 * [ ] 거래내역 입력/수정시 지불수단 없으면 추가
 * [ ] 통화 변환 - 오늘 날짜 기준으로만, api 시도
+* [ ] 비번 변경

@@ -13,6 +13,11 @@
     }
 
     .table-container {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        justify-content: center;
         overflow-y: auto;
         height: calc(100vh - 13em);
     }
@@ -20,6 +25,11 @@
     .table-container thead {
         position: sticky;
         top: 0;
+    }
+
+    td,
+    th {
+        padding: 0.1em;
     }
 
     .summary-container {
@@ -42,13 +52,25 @@
         margin-bottom: 0.3em;
     }
 
+    .icon-button {
+        min-width: unset;
+        background: transparent;
+        border-color: transparent;
+    }
+
     .bg-red {
         background: var(--pico-color-red-500);
         border-color: transparent;
     }
 
+    .bg-sand {
+        background: var(--pico-color-sand-200);
+        border-color: transparent;
+        color: var(--pico-color-sand-950);
+    }
+
     textarea {
-        height: 10em;
+        height: 8em;
     }
 
     .dialog-fullsize {
@@ -62,7 +84,8 @@
         left: 0;
     }
 
-    .dialog-enter-password {
+    .dialog-enter-password,
+    .dialog-enter-password form {
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -81,12 +104,14 @@
 
     .dialog-add-edit button.clear {
         position: relative;
-        width: 2em;
         min-width: unset;
-        padding: 5px 10px;
+        width: 2em;
+        height: 2.3em;
+        padding: 0.1em;
         margin: 0;
-        right: calc(-100% + 2.5em);
-        top: -3.7em;
+        margin-top: -3.7em;
+        right: calc(-100% + 2.4em);
+        top: 0;
     }
 
     .dialog-button-container {
@@ -98,6 +123,15 @@
         padding: 0.5em;
         left: 0;
         bottom: 0.5em;
+    }
+
+    .dialog-button-container button {
+        width: 100%;
+        margin: 0.5em;
+    }
+
+    .datalist-input-container {
+        width: 100%;
     }
 
     input[type="date"],
@@ -118,8 +152,12 @@
         background: transparent;
     }
 
-    .half {
+    .half-size {
         width: calc(50% - 0.25em) !important;
+    }
+
+    .full-size {
+        width: calc(100% - 0.25em) !important;
     }
 
     .one {
