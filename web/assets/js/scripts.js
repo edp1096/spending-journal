@@ -37,7 +37,6 @@ const allData = () => {
         accounts: [],
         accountData: {
             open: false,
-            notOK: false,
             account: {}
         },
         recordsResponse: {},
