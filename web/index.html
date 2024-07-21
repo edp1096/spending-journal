@@ -15,6 +15,8 @@
 
 <body x-data="allData">
     <div class="main-container">
+
+        <!-- Main menu -->
         <div class="main-header-container">
             <h2>지출기입장</h2>
 
@@ -86,6 +88,7 @@
         </div>
     </div>
 
+    <!-- Entering password input -->
     <div x-data="{ open: true }" x-init="$refs.inputPassword.focus()" id="password-gate-container">
         <div id="password-gate" x-show="open" x-transition class="dialog-fullsize dialog-enter-password">
             <p>
@@ -97,7 +100,8 @@
         </div>
     </div>
 
-    <div x-data="{ open: false }" id="input-method-container">
+    <!-- Add/Edit pay account -->
+    <div x-data="{ open: false }">
         <div @keyup.enter="enterPassword" id="input-method" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
             <input name="account-name" placeholder="계정명">
             <input name="pay-method" placeholder="계정유형">
@@ -109,6 +113,7 @@
         </div>
     </div>
 
+    <!-- Add/Edit record -->
     <div x-data="recordData">
         <form x-ref="inputRecord" id="input-record" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
             <h2>거래 입력</h2>
