@@ -63,22 +63,26 @@
 
                 <table>
                     <thead>
-                        <template x-if="records.records && records.records.length > 0">
+                        <template x-if="recordsResponse.records && recordsResponse.records.length > 0">
                             <tr>
                                 <th>일시</th>
                                 <th>분류</th>
                                 <th>지불</th>
                                 <th>금액</th>
+                                <th>삭제</th>
                             </tr>
                         </template>
                     </thead>
                     <tbody>
-                        <template x-for="r in records.records">
-                            <tr>
+                        <template x-for="(r, index) in recordsResponse.records" :key="index">
+                            <tr @click="openInputRecord(index)">
                                 <td x-text="`${r.date} ${r.time}`"></td>
                                 <td x-text="r.category"></td>
                                 <td x-text="`${payType[r['pay-type']]}`"></td>
                                 <td x-text="`${currencyCode[r.currency]} ${r.amount}`"></td>
+                                <td class="one">
+                                    <button @click.stop="deleteRecord(index)" type="button" class="bg-red">X</button>
+                                </td>
                             </tr>
                         </template>
                     </tbody>
@@ -89,8 +93,8 @@
         <hr>
 
         <div class="summary-container">
-            <span x-text="`Income total: ${(records['sum-income'] ?? 0)}`"></span>
-            <span x-text="`Pay total: ${(records['sum-pay'] ?? 0)}`"></span>
+            <span x-text="`Income total: ${(recordsResponse['sum-income'] ?? 0)}`"></span>
+            <span x-text="`Pay total: ${(recordsResponse['sum-pay'] ?? 0)}`"></span>
         </div>
     </div>
 
@@ -138,7 +142,7 @@
     <!-- Add/Edit record -->
     <div x-data="recordData" @keyup.escape.window="open = false">
         <form x-ref="recordForm" id="input-record" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
-            <h2>거래 입력</h2>
+            <h2>거래 입력/수정</h2>
 
             <select x-model="record['transaction-type']">
                 <option value="record_type_pay">지출</option>
@@ -154,7 +158,7 @@
                 <input x-model="accountName" x-ref="payAccount" list="account-list" placeholder="계정" required>
                 <datalist id="account-list">
                     <template x-for="(a, index) in accounts" :key="index">
-                        <option :data-index="index" :data-value="a.id" :value="a['account-name']"></option>
+                        <option :value="a['account-name']"></option>
                     </template>
                 </datalist>
                 <button @click="accountName=''; $refs.payAccount.focus()" class="clear" type="button">X</button>

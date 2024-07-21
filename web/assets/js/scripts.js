@@ -37,7 +37,7 @@ const allData = () => {
             open: false,
             account: {}
         },
-        records: {},
+        recordsResponse: {},
         recordData: {
             open: false,
             numberStep: { "USD": "0.01", "KRW": "1" },
@@ -111,7 +111,7 @@ const allData = () => {
             const uri = `${addr}/record?q=record:&pageSize=1000`
             const r = await fetch(uri)
             if (r.ok) {
-                this.records = await r.json()
+                this.recordsResponse = await r.json()
                 return true
             }
 
@@ -124,7 +124,7 @@ const allData = () => {
                 this.$event.target.classList.add('contrast')
             }
         },
-        openInputRecord() {
+        openInputRecord(index = null) {
             this.recordData.accountName = ""
 
             this.recordData.record = {}
@@ -141,13 +141,41 @@ const allData = () => {
             this.recordData.record.date = currentDate
             this.recordData.record.time = currentTime
 
+            if (index >= 0) {
+                this.recordData.record["transaction-type"] = this.recordsResponse.records[index]["transaction-type"]
+                this.recordData.record["pay-type"] = this.recordsResponse.records[index]["pay-type"]
+
+                for (a of this.accounts) {
+                    if (a.id == this.recordsResponse.records[index]["account-id"]) {
+                        this.recordData.accountName = a["account-name"]
+                        this.recordData.record["account-id"] = a.id
+                        break
+                    }
+                }
+
+                this.recordData.record.id = this.recordsResponse.records[index].id
+                this.recordData.record.category = this.recordsResponse.records[index].category
+                this.recordData.record.currency = this.recordsResponse.records[index].currency
+                this.recordData.record.amount = this.recordsResponse.records[index].amount
+                this.recordData.record.date = this.recordsResponse.records[index].date
+                this.recordData.record.time = this.recordsResponse.records[index].time
+                this.recordData.record.description = this.recordsResponse.records[index].description
+            }
+
             this.recordData.open = true
         },
         async requestSetRecord() {
-            const uri = `${addr}/record`
+            let requestMethod = "POST"
+            let params = ""
+            if (this.recordData.record.id) {
+                requestMethod = "PUT"
+                params = `?id=${this.recordData.record.id}`
+            }
+
+            const uri = `${addr}/record${params}`
             const r = await fetch(uri, {
-                method: "POST",
-                headers: { "content-Type": "application/json" },
+                method: requestMethod,
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(this.recordData.record)
             })
             if (r.ok) {
@@ -196,6 +224,27 @@ const allData = () => {
             }
 
             await this.requestSetRecord()
+        },
+        async deleteRecord(index) {
+            if (!this.recordsResponse.records[index].id) {
+                alert("Wrong action")
+                return false
+            }
+
+            const uri = `${addr}/record?id=${this.recordsResponse.records[index].id}`
+            const r = await fetch(uri, { method: "DELETE" })
+            if (r.ok) {
+                const response = await r.json()
+
+                if (response.status == "success") {
+                    await this.getRecords()
+                    this.recordData.open = false
+                    return
+                }
+            }
+
+            alert("Fail to delete record")
+            return false
         },
         init() { }
     }

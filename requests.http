@@ -74,7 +74,7 @@ Content-Type: application/json
     "amount": 13000,
     "category": "식비",
     "description": "점심 식사",
-    "date": "2024-07-17",
+    "date": "2024-07-16",
     "time": "12:35"
 }
 
@@ -84,12 +84,12 @@ Content-Type: application/json
 
 {
     "transaction-type": "record_type_income",
-    "pay-account": "현금",
+    "pay-type": "direct",
     "currency": "KRW",
     "amount": 50000,
     "category": "수입",
     "description": "점심 용돈",
-    "date": "2024-07-17",
+    "date": "2024-07-16",
     "time": "13:01"
 }
 
@@ -97,17 +97,19 @@ Content-Type: application/json
 DELETE {{uri}}/record?id=record:1721190212 HTTP/1.1
 
 ### update
-PUT {{uri}}/record?id=record:1721192161 HTTP/1.1
+PUT {{uri}}/record?id=record:1721577778 HTTP/1.1
 Content-Type: application/json
 
 {
+    "id": "record:1721577778",
     "transaction-type": "record_type_pay",
-    "pay-account": "현금",
+    "account-id": "account:1721566319",
+    "pay-type": "direct",
     "currency": "KRW",
     "amount": 12500,
     "category": "식비",
     "description": "아점",
-    "date": "2024-07-19",
+    "date": "2024-07-15",
     "time": "11:20"
 }
 

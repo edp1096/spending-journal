@@ -107,8 +107,8 @@ func getRecords(queries []string, page, pageSize int, queryType string) ([]Recor
 	search := bleve.NewSearchRequest(boolQuery)
 	search.Size = pageSize
 	search.From = (page - 1) * pageSize
-	search.SortBy([]string{"date:", "time:", "_score"}) // SORT ASC
-	// search.SortBy([]string{"-_score"}) // SORT DESC
+	search.SortBy([]string{"date", "time", "_score"}) // SORT ASC
+	// search.SortBy([]string{"-date", "-time", "-_score"}) // SORT DESC
 
 	searchResults, err := bleveIndex.Search(search)
 	if err != nil {

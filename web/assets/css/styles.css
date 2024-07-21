@@ -27,9 +27,23 @@
         top: 0;
     }
 
+    tr:hover {
+        background: var(--pico-secondary-hover-background);
+    }
+
     td,
     th {
         padding: 0.1em;
+        background: transparent;
+    }
+
+    td button {
+        min-width: unset;
+        min-height: unset;
+        width: 1.8em;
+        height: 1.8em;
+        padding: 0 !important;
+        margin: 0 !important;
     }
 
     .summary-container {
@@ -153,33 +167,41 @@
     }
 
     .half-size {
+        min-width: unset;
         width: calc(50% - 0.25em) !important;
     }
 
     .full-size {
+        min-width: unset;
         width: calc(100% - 0.25em) !important;
     }
 
     .one {
+        min-width: unset;
         width: calc(10% - 0.25em) !important;
     }
 
     .two {
+        min-width: unset;
         width: calc(20% - 0.25em) !important;
     }
 
     .third {
+        min-width: unset;
         width: calc(30% - 0.25em) !important;
     }
 
     .forth {
+        min-width: unset;
         width: calc(40% - 0.25em) !important;
     }
 
     .sixth {
+        min-width: unset;
         width: calc(60% - 0.25em) !important;
     }
 
     .seventh {
+        min-width: unset;
         width: calc(70% - 0.25em) !important;
     }
