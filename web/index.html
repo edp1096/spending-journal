@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Spending journal</title>
+    <title>지출기입장</title>
 
     <link rel="stylesheet" href="assets/css/pico.min.css">
     <link rel="stylesheet" href="assets/css/pico.colors.min.css">
@@ -26,17 +26,17 @@
 
             <div class="header-button-container">
                 <button @click="showHome" class="outline secondary icon-button icon-align">
-                    <span class="icon">home</span> Home
+                    <span class="icon">home</span> 홈
                 </button>
 
                 <button @click="showAccounts" class="outline secondary icon-button icon-align">
-                    <span class="icon">book_5</span> Accounts
+                    <span class="icon">book_5</span> 계정
                 </button>
                 <button @click="showRecords" class="outline secondary icon-button icon-align ">
-                    <span class="icon">edit_note</span> Pay records
+                    <span class="icon">edit_note</span> 지출입
                 </button>
                 <button @click="openPreference" class="outline secondary icon-button icon-align">
-                    <span class="icon">settings</span>
+                    <span class="icon">settings</span> 설정
                 </button>
             </div>
         </div>
@@ -50,7 +50,7 @@
         <template x-if="showAccountList">
             <div class="table-container">
                 <button @click="openInputAccount" class="full-size bg-jade icon-align">
-                    Add account <span class="icon">add</span>
+                    계정 추가 <span class="icon">add</span>
                 </button>
 
                 <table>
@@ -84,7 +84,7 @@
         <template x-if="showRecordList">
             <div class="table-container">
                 <button @click="openInputRecord" class="full-size bg-jade icon-align">
-                    Add record <span class="icon">add</span>
+                    기록 추가 <span class="icon">add</span>
                 </button>
 
                 <table>
@@ -120,19 +120,16 @@
 
         <div class="summary-container">
             <div class="full-size hgt2-1 flex-row right">
-                <label for="summary-date-start">시작:</label>
-                <input x-model="summaryDateFrom" :change="getRecords" class="date-mini thirtyfive" id="summary-date-start" type="date">
-
-                <span class="divider-v">|</span>
-
-                <label for="summary-date-end">끝:</label>
-                <input x-model="summaryDateTo" :change="getRecords" class="date-mini thirtyfive" id="summary-date-end" type="date">
+                <label>기간:</label>
+                <input x-model="summaryDateFrom" :change="getRecords" class="date-mini wdt-38" type="date">
+                <span class="divider-v">~</span>
+                <input x-model="summaryDateTo" :change="getRecords" class="date-mini wdt-38" type="date">
             </div>
 
             <div>
-                <span x-text="`Income: ${(recordsResponse['sum-income'] ?? 0)}`"></span>
-                <span x-text="`Pay: ${(recordsResponse['sum-pay'] ?? 0)}`"></span>
-                <span x-text="`Credit: ${(recordsResponse['sum-scheduled-pay'] ?? 0)}`"></span>
+                <span x-text="`수입: ${(recordsResponse['sum-income'] ?? 0)}`"></span>
+                <span x-text="`지출: ${(recordsResponse['sum-pay'] ?? 0)}`"></span>
+                <span x-text="`신용: ${(recordsResponse['sum-scheduled-pay'] ?? 0)}`"></span>
             </div>
         </div>
     </div>
@@ -141,12 +138,12 @@
     <div x-data="{ open: true }" x-init="$refs.passwordInput.focus()" id="password-gate-container">
         <div id="password-gate" x-show="open" x-transition class="dialog-fullsize dialog-enter-password">
             <h3 class="icon-align">
-                Please enter password <span class="icon md-36">lock</span>
+                비밀번호를 입력해주세요 <span class="icon md-36">lock</span>
             </h3>
 
             <form x-ref="passwordForm">
-                <input x-ref="passwordInput" type="password" id="password" placeholder="Password" required>
-                <button @click="enterPassword($event)">Ok</button>
+                <input x-ref="passwordInput" type="password" id="password" placeholder="비밀번호 입력" required>
+                <button @click="enterPassword($event)">확인</button>
             </form>
         </div>
     </div>
@@ -171,14 +168,14 @@
             </select>
 
             <select x-model="account['use-day-from']">
-                <option value="">이용기간 시작일(전전월 또는 전월)</option>
+                <option value="">카드 이용 시작일(전전월 또는 전월)</option>
                 <template x-for="day in 31" :key="day">
                     <option :value="day" x-text="day"></option>
                 </template>
             </select>
 
             <select x-model="account['use-day-to']">
-                <option value="">이용기간 종료일(전월 또는 당월)</option>
+                <option value="">카드 이용 종료일(전월 또는 당월)</option>
                 <template x-for="day in 31" :key="day">
                     <option :value="day" x-text="day"></option>
                 </template>
@@ -187,8 +184,8 @@
             <textarea x-model="account.description" placeholder="메모"></textarea>
 
             <div class="dialog-button-container">
-                <button @click.stop="open = !open" type="button" class="bg-red">Cancel</button>
-                <button @click.stop="setAccount($event)" type="button">Ok</button>
+                <button @click.stop="open = !open" type="button" class="bg-red">취소</button>
+                <button @click.stop="setAccount($event)" type="button">확인</button>
             </div>
         </form>
     </div>
@@ -240,8 +237,8 @@
             <textarea x-model="record.description" placeholder="메모"></textarea>
 
             <div class="dialog-button-container">
-                <button @click="open = !open" type="button" class="bg-red">Cancel</button>
-                <button @click="setRecord($event)" type="button">Ok</button>
+                <button @click="open = !open" type="button" class="bg-red">취소</button>
+                <button @click="setRecord($event)" type="button">확인</button>
             </div>
         </form>
     </div>
@@ -256,10 +253,10 @@
             <input x-model="preferences['new-password']" type="password" placeholder="신규 비밀번호" required>
 
             <div class="dialog-section-button-container">
-                <button @click="changePassword($event)" type="button">Change password</button>
+                <button @click="changePassword($event)" type="button">비밀번호 변경</button>
             </div>
 
-            <div class="dialog-section-button-container">
+            <div class="dialog-section-button-container switch-padding">
                 <label class="full-size">
                     <input x-model="lightmode" type="checkbox" role="switch" checked />
                     밝게 보기
@@ -267,7 +264,7 @@
             </div>
 
             <div class="dialog-button-container">
-                <button @click="open = !open" type="button" class="bg-red">Close</button>
+                <button @click="open = !open" type="button" class="bg-red">닫기</button>
             </div>
         </form>
     </div>

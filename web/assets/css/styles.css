@@ -30,7 +30,7 @@
     tr:nth-child(even) {
         background: var(--pico-range-border-color);
     }
-    
+
     tr:hover {
         background: var(--pico-form-element-border-color);
     }
@@ -60,6 +60,7 @@
         display: flex;
         flex-direction: column;
         align-items: flex-end;
+        width: calc(100% - 0.5em);
     }
 
     h1,
@@ -214,6 +215,7 @@
     input[type="date"],
     input[type="time"] {
         position: relative;
+        background-image: none !important;
     }
 
     input[type="date"]::-webkit-calendar-picker-indicator,
@@ -232,11 +234,15 @@
     input[type="date"].date-mini {
         height: 2em;
         font-size: 0.8em;
-        ;
     }
 
     label {
-        padding-right: 0.5em;
+        padding-right: 0.2em;
+    }
+
+    .switch-padding {
+        padding-top: 1.5em;
+        padding-left: 0.5em;
     }
 
     .half-size {
@@ -267,6 +273,11 @@
     .thirtyfive {
         min-width: unset;
         width: calc(35% - 0.25em) !important;
+    }
+
+    .wdt-38 {
+        min-width: unset;
+        width: calc(38% - 0.25em) !important;
     }
 
     .forth {
@@ -302,6 +313,6 @@
     }
 
     .divider-v {
-        padding-left: 0.5em;
-        padding-right: 0.5em;
+        padding-left: 0.3em;
+        padding-right: 0.3em;
     }
