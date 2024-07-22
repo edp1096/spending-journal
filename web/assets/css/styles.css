@@ -277,6 +277,7 @@
 
     .wdt-38 {
         min-width: unset;
+        max-width: 10em;
         width: calc(38% - 0.25em) !important;
     }
 
