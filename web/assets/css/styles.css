@@ -84,8 +84,9 @@
         justify-content: center;
     }
 
-    .icon-button {
+    .icon-tab {
         min-width: unset;
+        width: 100%;
         background: transparent;
         border-color: transparent;
     }
