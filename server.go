@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,7 +13,8 @@ import (
 func SetupServer() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /setup/db", setupDatabaseHandler)
+	mux.HandleFunc("GET /setup/db", databaseSetupHandler)
+	mux.HandleFunc("GET /setup/db/password", databasePasswordChangeHandler)
 
 	// Pay account
 	mux.HandleFunc("POST /account", addAccountHandler)
@@ -31,11 +31,11 @@ func SetupServer() {
 
 	mux.HandleFunc("GET /", handleStaticFiles)
 
-	server := &http.Server{Addr: "127.0.0.1:8080", Handler: mux}
+	server := &http.Server{Addr: listenADDR, Handler: mux}
 	go func() {
-		fmt.Println("Server starting on localhost:8080")
+		fmt.Println("Server starting on " + listenADDR)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			panic("Server error: " + err.Error())
 		}
 	}()
 
@@ -50,7 +50,7 @@ func SetupServer() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Printf("Server forced to shutdown: %v", err)
+		fmt.Printf("Server forced to shutdown: %v", err)
 	}
 
 	if bleveIndex != nil {

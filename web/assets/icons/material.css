@@ -1,0 +1,52 @@
+@font-face {
+    font-family: 'Material Symbols Filled';
+    font-style: normal;
+    font-weight: 100 700;
+    /* font-weight: 400; */
+    src: url(./material_symbols_fill.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'Material Symbols Outlined';
+    font-style: normal;
+    font-weight: 100 700;
+    /* font-weight: 400; */
+    src: url(./material_symbols_outline.woff2) format('woff2');
+}
+
+.icon {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: "liga";
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+}
+
+.icon.fill {
+    font-family: 'Material Symbols Filled';
+}
+
+.icon.md-12 {
+    font-size: 12px;
+}
+
+.icon.md-16 {
+    font-size: 16px;
+}
+
+.icon.md-36 {
+    font-size: 36px;
+}
+
+.icon.md-48 {
+    font-size: 48px;
+}

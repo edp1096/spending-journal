@@ -5,6 +5,9 @@
 GET {{uri}}/setup/db?password=12345 HTTP/1.1
 
 
+### change password
+GET {{uri}}/setup/db/password?old-password=1234&new-password=12345 HTTP/1.1
+
 
 ### add pay account
 POST {{uri}}/account HTTP/1.1
@@ -123,7 +126,7 @@ GET {{uri}}/record?q=record_type_pay&page=1&pageSize=1000 HTTP/1.1
 GET {{uri}}/record?q=record_type_income&page=1&pageSize=1000 HTTP/1.1
 
 ### search
-GET {{uri}}/record?q=record_type_pay%20아점&queryType=AND&page=1&pageSize=100 HTTP/1.1
+GET {{uri}}/record?q=record_type_pay%20아침&queryType=AND&page=1&pageSize=100 HTTP/1.1
 
 ### summary by period
 GET {{uri}}/record/sum?start=2024-07-01&end=2024-07-31 HTTP/1.1

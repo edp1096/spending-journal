@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func setupDatabaseHandler(w http.ResponseWriter, r *http.Request) {
+func databaseSetupHandler(w http.ResponseWriter, r *http.Request) {
 	password := r.URL.Query().Get("password")
 	if password == "" {
 		http.Error(w, "Password is required", http.StatusBadRequest)
@@ -25,8 +25,6 @@ func setupDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := initBadgerDB(password)
 	if err != nil {
-		// log.Printf("Failed to initialize BadgerDB: %v", err)
-
 		httpStatus := http.StatusInternalServerError
 		if strings.Contains(err.Error(), "Encryption key mismatch") {
 			httpStatus = http.StatusBadRequest
@@ -38,9 +36,42 @@ func setupDatabaseHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = initBleveIndex()
 	if err != nil {
-		// log.Printf("Failed to initialize Bleve index: %v", err)
 		http.Error(w, "Failed to initialize search index", http.StatusInternalServerError)
 		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+func databasePasswordChangeHandler(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	if bleveIndex != nil {
+		bleveIndex.Close()
+		bleveIndex = nil
+	}
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+
+	oldPassword := r.URL.Query().Get("old-password")
+	newPassword := r.URL.Query().Get("new-password")
+
+	err = changePassword(oldPassword, newPassword)
+	if err != nil {
+		http.Error(w, "Failed to change password", http.StatusInternalServerError)
+		return
+	}
+
+	if bleveIndex != nil {
+		bleveIndex.Close()
+		bleveIndex = nil
+	}
+	if db != nil {
+		db.Close()
+		db = nil
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -58,8 +89,6 @@ func addAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = addAccount(account)
 	if err != nil {
-		// log.Printf("Failed to add account: %v", err)
-
 		httpStatus := http.StatusInternalServerError
 		if strings.Contains(err.Error(), "required") {
 			httpStatus = http.StatusBadRequest
@@ -112,7 +141,11 @@ func updateAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = updateAccount(accountID, updatedAccount)
 	if err != nil {
-		http.Error(w, "Failed to update record", http.StatusInternalServerError)
+		httpStatus := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "Key not found") {
+			httpStatus = http.StatusBadRequest
+		}
+		http.Error(w, "Failed to update account", httpStatus)
 		return
 	}
 
@@ -142,8 +175,6 @@ func addRecordHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = addRecord(record)
 	if err != nil {
-		// log.Printf("Failed to add record: %v", err)
-
 		httpStatus := http.StatusInternalServerError
 		if strings.Contains(err.Error(), "required") {
 			httpStatus = http.StatusBadRequest
@@ -196,7 +227,11 @@ func updateRecordHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = updateRecord(recordID, updatedRecord)
 	if err != nil {
-		http.Error(w, "Failed to update record", http.StatusInternalServerError)
+		httpStatus := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "Key not found") {
+			httpStatus = http.StatusBadRequest
+		}
+		http.Error(w, "Failed to update record", httpStatus)
 		return
 	}
 
@@ -230,7 +265,6 @@ func getRecordHandler(w http.ResponseWriter, r *http.Request) {
 
 	records, sumPay, sumIncome, totalCount, err := getRecords(queries, page, pageSize, queryType)
 	if err != nil {
-		// log.Printf("Failed to search records: %v", err)
 		http.Error(w, "Failed to search records", http.StatusInternalServerError)
 		return
 	}
@@ -265,7 +299,6 @@ func getSumHandler(w http.ResponseWriter, r *http.Request) {
 
 	records, sumPay, sumIncome, err := getSumByPeriod(startDate, endDate)
 	if err != nil {
-		// log.Printf("Failed to get sum: %v", err)
 		http.Error(w, "Failed to calculate sum", http.StatusInternalServerError)
 		return
 	}

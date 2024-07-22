@@ -22,9 +22,18 @@
 # Todos
 * [x] 지불수단 제어
 * [x] 거래내역 입력/수정시 지불수단 없으면 추가
-* [ ] 비번 변경
-* [ ] 환경설정
+* [x] 환경설정 - 일단 화면 띄우기만
+* [x] 비번 변경 - 환경설정 내부에
+    * [x] 백
+    * [x] 프론트
+* [ ] 분류 제어(=삭제)
 * [ ] 기간 검색 - html
-* [ ] 합계 교정
+* [ ] 백 합계 교정
 * [ ] sumhandler 제거 및 기간검색 통합
 * [ ] 통화 변환 - 오늘 날짜 기준으로만, api 시도
+
+
+# 아이콘
+* 통장 - https://www.flaticon.com/kr/free-icon/passbook_9235918
+* 입출금 - https://www.flaticon.com/kr/free-icon/cash-flow_9235778
+* 설정 - https://www.flaticon.com/kr/free-icon/gears_4115432

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="assets/css/pico.colors.min.css">
     <script src="assets/js/alpine.min.js" defer></script>
 
+    <link rel="stylesheet" href="assets/icons/material.css">
     <link rel="stylesheet" href="assets/css/styles.css">
     <script src="assets/js/scripts.js"></script>
 </head>
@@ -22,16 +23,24 @@
             <h2>지출기입장</h2>
 
             <div class="header-button-container">
-                <button @click="showAccounts" class="outline secondary">Accounts</button>
-                <button @click="showRecords" class="outline secondary">Pay records</button>
-                <button class="icon-button">⚙️</button>
+                <button @click="showAccounts" class="outline secondary icon-button icon-align">
+                    <span class="icon">book_5</span> Accounts
+                </button>
+                <button @click="showRecords" class="outline secondary icon-button icon-align ">
+                    <span class="icon">edit_note</span> Pay records
+                </button>
+                <button @click="openPreference" class="outline secondary icon-button icon-align">
+                    <span class="icon">settings</span>
+                </button>
             </div>
         </div>
 
         <!-- Payment accounts -->
         <template x-if="showAccountList">
             <div class="table-container">
-                <button @click="openInputAccount" class="full-size bg-sand">Add account➕</button>
+                <button @click="openInputAccount" class="full-size bg-sand icon-align">
+                    Add account <span class="icon">add</span>
+                </button>
 
                 <table>
                     <thead>
@@ -63,7 +72,9 @@
         <!-- Payment records -->
         <template x-if="showRecordList">
             <div class="table-container">
-                <button @click="openInputRecord" class="full-size bg-sand">Add record➕</button>
+                <button @click="openInputRecord" class="full-size bg-sand icon-align">
+                    Add record <span class="icon">add</span>
+                </button>
 
                 <table>
                     <thead>
@@ -105,9 +116,11 @@
     <!-- Entering password input -->
     <div x-data="{ open: true }" x-init="$refs.passwordInput.focus()" id="password-gate-container">
         <div id="password-gate" x-show="open" x-transition class="dialog-fullsize dialog-enter-password">
-            <p>
-                Please enter password 🔐
-            </p>
+            <!-- <p > -->
+                <h3 class="icon-align">
+                    Please enter password <span class="icon md-36">lock</span>
+                </h3>
+            <!-- </p> -->
 
             <form x-ref="passwordForm">
                 <input x-ref="passwordInput" type="password" id="password" placeholder="Password" required>
@@ -118,14 +131,14 @@
 
     <!-- Add/Edit pay account -->
     <div x-data="accountData" @keyup.escape.window="open = false">
-        <form x-ref="accountForm" id="input-account" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+        <form x-ref="accountForm" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
             <h2>계정 정보 입력/수정</h2>
 
             <input x-model="account['account-name']" :change="checkAccountNameDuplicate()" placeholder="계정 이름(카드/통장/지갑 등)" required>
             <select x-model="account['pay-type']">
                 <option value="direct">직불/현금</option>
                 <option value="credit">신용/외상</option>
-                <option value="hybrid">겸용(리볼빙)</option>
+                <option value="hybrid">복합(리볼빙)</option>
             </select>
 
             <select x-model="account['repay-day']">
@@ -146,7 +159,7 @@
 
     <!-- Add/Edit record -->
     <div x-data="recordData" @keyup.escape.window="open = false">
-        <form x-ref="recordForm" id="input-record" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+        <form x-ref="recordForm" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
             <h2>거래 입력/수정</h2>
 
             <select x-model="record['transaction-type']">
@@ -160,7 +173,7 @@
             </select>
 
             <div class="datalist-input-container">
-                <input x-model="accountName" :change="setRecordPayType" x-ref="payAccount" list="account-list" placeholder="계정" required>
+                <input x-model="accountName" :change="setRecordPayType" x-ref="payAccount" list="account-list" placeholder="계정 (현금/통장/카드 등)" required>
                 <datalist id="account-list">
                     <template x-for="(a, index) in accounts" :key="index">
                         <option :value="a['account-name']"></option>
@@ -196,6 +209,26 @@
             </div>
         </form>
     </div>
+
+    <!-- Preference -->
+    <div x-data="preferenceData" @keyup.escape.window="open = false">
+        <form x-ref="preferenceForm" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+            <h2>설정</h2>
+
+            <h3>비밀번호</h3>
+            <input x-model="preferences['old-password']" type="password" placeholder="기존 비밀번호" required>
+            <input x-model="preferences['new-password']" type="password" placeholder="신규 비밀번호" required>
+
+            <div class="dialog-section-button-container">
+                <button @click="changePassword($event)" type="button">Change password</button>
+            </div>
+
+            <div class="dialog-button-container">
+                <button @click="open = !open" type="button" class="bg-red">Close</button>
+            </div>
+        </form>
+    </div>
+
 </body>
 
 </html>

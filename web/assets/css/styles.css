@@ -40,8 +40,8 @@
     td button {
         min-width: unset;
         min-height: unset;
-        width: 1.8em;
-        height: 1.8em;
+        width: 1.5em;
+        height: 1.6em;
         padding: 0 !important;
         margin: 0 !important;
     }
@@ -64,6 +64,13 @@
         padding: 0.3em;
         margin-top: 0.3em;
         margin-bottom: 0.3em;
+    }
+
+    .icon-align {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
     }
 
     .icon-button {
@@ -140,6 +147,22 @@
     }
 
     .dialog-button-container button {
+        width: 100%;
+        margin: 0.5em;
+    }
+
+    .dialog-section-button-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        position: relative;
+        width: 100vw;
+        padding: 0;
+        left: 0;
+        /* bottom: 0.5em; */
+    }
+
+    .dialog-section-button-container button {
         width: 100%;
         margin: 0.5em;
     }

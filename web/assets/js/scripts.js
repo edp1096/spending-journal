@@ -47,6 +47,13 @@ const allData = () => {
             accountName: "",
             record: {}
         },
+        preferenceData: {
+            open: false,
+            preferences: {
+                "old-password": "",
+                "new-password": ""
+            }
+        },
         clearListViewSelection() {
             const container = document.querySelector(".header-button-container").children
             for (const c of container) { c.classList.remove("contrast") }
@@ -315,6 +322,39 @@ const allData = () => {
                     break
                 }
             }
+        },
+        async changePassword(event) {
+            if (!checkFormValidation(this.$refs.preferenceForm, event)) { return false }
+
+            // Control this.preferenceData.preferences
+
+            const passwordOLD = this.preferenceData.preferences["old-password"]
+            const passwordNEW = this.preferenceData.preferences["new-password"]
+            const params = `?old-password=${passwordOLD}&new-password=${passwordNEW}`
+
+            const uri = `${addr}/setup/db/password${params}`
+            const r = await fetch(uri)
+            if (r.ok) {
+                const response = await r.json()
+
+                if (response.status == "success") {
+                    alert("Password is changed")
+                    this.preferenceData.open = false
+                    openPasswordGate()
+                    return
+                }
+            }
+
+            alert("Fail to change password")
+            return false
+        },
+        openPreference() {
+            this.preferenceData.preferences = {
+                "old-password": "",
+                "new-password": ""
+            }
+
+            this.preferenceData.open = true
         },
         init() { }
     }
