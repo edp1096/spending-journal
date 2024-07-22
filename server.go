@@ -27,8 +27,8 @@ func SetupServer() {
 	mux.HandleFunc("DELETE /record", deleteRecordHandler)
 	mux.HandleFunc("PUT /record", updateRecordHandler)
 	mux.HandleFunc("GET /record", getRecordHandler)
-	mux.HandleFunc("GET /record/sum", getSumHandler)
 
+	// Serve files for html
 	mux.HandleFunc("GET /", handleStaticFiles)
 
 	server := &http.Server{Addr: listenADDR, Handler: mux}

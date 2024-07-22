@@ -6,6 +6,8 @@ type Account struct {
 	AccountName string `json:"account-name"`
 	PayType     string `json:"pay-type"` // direct, credit, hybrid(revolving)
 	RepayDay    string `json:"repay-day,omitempty"`
+	UseDayFrom  string `json:"use-day-from,omitempty"`
+	UseDayTo    string `json:"use-day-to,omitempty"`
 	Description string `json:"description,omitempty"`
 	RegDTTM     string
 }

@@ -3,8 +3,8 @@ package server
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
+	"time"
 )
 
 func databaseSetupHandler(w http.ResponseWriter, r *http.Request) {
@@ -293,71 +293,50 @@ func getRecordHandler(w http.ResponseWriter, r *http.Request) {
 		queryType = "OR"
 	}
 
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if page < 1 {
-		page = 1
-	}
-	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
-	// if pageSize < 1 || pageSize > 100 {
-	if pageSize < 1 {
-		pageSize = 10
+	// 페이지 리마크 - 보류 또는 삭제
+	// page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	// if page < 1 {
+	// 	page = 1
+	// }
+	// pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+	// // if pageSize < 1 || pageSize > 100 {
+	// if pageSize < 1 {
+	// 	pageSize = 300
+	// }
+
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
+	startDate, _ := time.Parse("2006-01-02 15:04:05", from+" 00:00:00")
+	endDate, _ := time.Parse("2006-01-02 15:04:05", to+" 23:59:59")
+
+	if from == "" || to == "" {
+		http.Error(w, "Both from and to are required", http.StatusBadRequest)
+		return
 	}
 
-	records, sumPay, sumIncome, totalCount, err := getRecords(queries, page, pageSize, queryType)
+	// records, sumPay, sumCreditPay, sumIncome, totalCount, err := getRecords(queries, page, pageSize, queryType, startDate, endDate)
+	records, sumPay, sumCreditPay, sumIncome, err := getRecords(queries, queryType, startDate, endDate)
 	if err != nil {
 		http.Error(w, "Failed to search records", http.StatusInternalServerError)
 		return
 	}
 
 	response := struct {
-		Records    []Record `json:"records"`
-		SumPay     float64  `json:"sum-pay"`
-		SumIncome  float64  `json:"sum-income"`
-		TotalCount int      `json:"total-count"`
-		Page       int      `json:"page"`
-		PageSize   int      `json:"page_size"`
+		Records      []Record `json:"records"`
+		SumPay       float64  `json:"sum-pay"`
+		SumCreditPay float64  `json:"sum-credit-pay"`
+		SumIncome    float64  `json:"sum-income"`
+		TotalCount   int      `json:"total-count"`
+		// Page         int      `json:"page"`
+		// PageSize     int      `json:"page_size"`
 	}{
-		Records:    records,
-		SumPay:     sumPay,
-		SumIncome:  sumIncome,
-		TotalCount: totalCount,
-		Page:       page,
-		PageSize:   pageSize,
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-}
-
-func getSumHandler(w http.ResponseWriter, r *http.Request) {
-	if db == nil {
-		http.Error(w, "Enter password first", http.StatusBadRequest)
-		return
-	}
-
-	fromDate := r.URL.Query().Get("from")
-	toDate := r.URL.Query().Get("to")
-	if fromDate == "" || toDate == "" {
-		http.Error(w, "Both 'from' and 'to' query parameters are required", http.StatusBadRequest)
-		return
-	}
-
-	records, sumIncome, sumPay, sumScheduledPay, err := getSumByPeriod(fromDate, toDate)
-	if err != nil {
-		http.Error(w, "Failed to calculate sum", http.StatusInternalServerError)
-		return
-	}
-
-	response := struct {
-		Records         []Record `json:"records"`
-		SumIncome       float64  `json:"sum-income"`
-		SumPay          float64  `json:"sum-pay"`
-		SumScheduledPay float64  `json:"sum-scheduled-pay"`
-	}{
-		Records:         records,
-		SumIncome:       sumIncome,
-		SumPay:          sumPay,
-		SumScheduledPay: sumScheduledPay,
+		Records:      records,
+		SumPay:       sumPay,
+		SumCreditPay: sumCreditPay,
+		SumIncome:    sumIncome,
+		// TotalCount:   totalCount,
+		// Page:         page,
+		// PageSize:     pageSize,
 	}
 
 	w.WriteHeader(http.StatusOK)

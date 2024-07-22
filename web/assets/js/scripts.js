@@ -163,7 +163,7 @@ const allData = () => {
             }
 
             // const uri = `${addr}/record?q=record:&pageSize=1000`
-            const uri = `${addr}/record/sum?from=${this.summaryDateFrom}&to=${this.summaryDateTo}`
+            const uri = `${addr}/record?q=record:&from=${this.summaryDateFrom}&to=${this.summaryDateTo}`
             const r = await fetch(uri)
             if (r.ok) {
                 this.recordsResponse = await r.json()

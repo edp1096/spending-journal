@@ -119,3 +119,37 @@ func getAccountList() ([]Account, error) {
 
 	return results, nil
 }
+
+func getAccountListMAP() (map[string]Account, error) {
+	var results map[string]Account = map[string]Account{}
+
+	err := db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 10
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		for it.Seek([]byte("account:")); it.ValidForPrefix([]byte("account:")); it.Next() {
+			item := it.Item()
+			var account Account
+
+			err := item.Value(func(v []byte) error {
+				return json.Unmarshal(v, &account)
+			})
+			if err != nil {
+				return err
+			}
+
+			// results = append(results, account)
+			results[account.ID] = account
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return map[string]Account{}, err
+	}
+
+	return results, nil
+}

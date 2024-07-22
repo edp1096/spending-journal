@@ -88,15 +88,18 @@ func updateRecord(id string, updatedRecord Record) error {
 	return err
 }
 
-func getRecords(queries []string, page, pageSize int, queryType string) ([]Record, float64, float64, int, error) {
+// func getRecords(queries []string, page, pageSize int, queryType string, startDate, endDate time.Time) ([]Record, float64, float64, float64, int, error) {
+func getRecords(queries []string, queryType string, startDate, endDate time.Time) ([]Record, float64, float64, float64, error) {
 	var results []Record = []Record{}
 	var totalPay float64 = 0
+	var totalScheduledPay float64 = 0
 	var totalIncome float64 = 0
 
 	boolQuery := bleve.NewBooleanQuery()
+
+	// 기존 쿼리 조건 추가
 	for _, query := range queries {
 		matchQuery := bleve.NewMatchQuery(query)
-
 		if queryType == "AND" {
 			boolQuery.AddMust(matchQuery)
 		} else {
@@ -104,9 +107,17 @@ func getRecords(queries []string, page, pageSize int, queryType string) ([]Recor
 		}
 	}
 
+	dateRangeQuery := bleve.NewDateRangeQuery(startDate, endDate)
+	dateRangeQuery.SetField("date") // 'date' 필드에 대해 날짜 범위 검색
+	boolQuery.AddMust(dateRangeQuery)
+
 	search := bleve.NewSearchRequest(boolQuery)
-	search.Size = pageSize
-	search.From = (page - 1) * pageSize
+
+	// 페이징 리마크 - 일단 보류
+	// search.Size = pageSize
+	// search.From = (page - 1) * pageSize
+	search.Size = 1000
+
 	search.SortBy([]string{"date", "time", "_score"}) // SORT ASC
 	// search.SortBy([]string{"-date", "-time", "-_score"}) // SORT DESC
 
@@ -114,6 +125,8 @@ func getRecords(queries []string, page, pageSize int, queryType string) ([]Recor
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
+
+	// accounts, _ := getAccountListMAP()
 
 	for _, hit := range searchResults.Hits {
 		var record Record
@@ -135,57 +148,30 @@ func getRecords(queries []string, page, pageSize int, queryType string) ([]Recor
 
 		switch record.TransactionType {
 		case "record_type_pay":
-			totalPay += record.Amount
+			switch record.PayType {
+			case "direct":
+				totalPay += record.Amount
+			case "credit":
+				// 일단 보류
+				// recordDate, err := time.Parse("2006-01-02", record.Date)
+				// if err != nil {
+				// 	continue
+				// }
+
+				// oneMonthBefore := endDate.AddDate(0, -1, 0)
+				// repayDay, err := strconv.Atoi(accounts[record.AccountID].RepayDay)
+				// if err != nil {
+				// 	continue
+				// }
+				// repayDate := time.Date(endDate.Year(), endDate.Month(), repayDay, 0, 0, 0, 0, endDate.Location())
+
+				totalScheduledPay += record.Amount
+			}
 		case "record_type_income":
 			totalIncome += record.Amount
 		}
 	}
 
-	return results, totalPay, totalIncome, int(searchResults.Total), nil
-}
-
-func getSumByPeriod(startDate, endDate string) ([]Record, float64, float64, float64, error) {
-	var records []Record = []Record{}
-	var sumPay float64 = 0
-	var sumScheduledPay float64 = 0
-	var sumIncome float64 = 0
-
-	err := db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
-		it := txn.NewIterator(opts)
-		defer it.Close()
-
-		for it.Seek([]byte("record:")); it.ValidForPrefix([]byte("record:")); it.Next() {
-			item := it.Item()
-			err := item.Value(func(v []byte) error {
-				var record Record
-				if err := json.Unmarshal(v, &record); err != nil {
-					return err
-				}
-				if record.Date >= startDate && record.Date <= endDate {
-					records = append(records, record)
-
-					switch record.TransactionType {
-					case "record_type_pay":
-						switch record.PayType {
-						case "direct":
-							sumPay += record.Amount
-						case "credit":
-							sumScheduledPay += record.Amount
-						}
-					case "record_type_income":
-						sumIncome += record.Amount
-					}
-				}
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	return records, sumIncome, sumPay, sumScheduledPay, err
+	// return results, totalPay, totalScheduledPay, totalIncome, int(searchResults.Total), nil
+	return results, totalPay, totalScheduledPay, totalIncome, nil
 }

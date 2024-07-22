@@ -19,6 +19,10 @@
 * 지불수단 목록 - GET /account
 
 
+## 카드 이용기간 (신용공여기간)
+* https://www.bccard.com/app/card/ContentsLinkActn.do?pgm_id=ind0623
+
+
 # Todos
 * [x] 지불수단 제어
 * [x] 거래내역 입력/수정시 지불수단 없으면 추가
