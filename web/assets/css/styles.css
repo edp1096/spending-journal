@@ -27,8 +27,12 @@
         top: 0;
     }
 
+    tr:nth-child(even) {
+        background: var(--pico-range-border-color);
+    }
+    
     tr:hover {
-        background: var(--pico-secondary-hover-background);
+        background: var(--pico-form-element-border-color);
     }
 
     td,
@@ -45,6 +49,12 @@
         padding: 0 !important;
         margin: 0 !important;
     }
+
+    th.th-center,
+    td.td-center {
+        text-align: center;
+    }
+
 
     .summary-container {
         display: flex;
@@ -80,7 +90,37 @@
     }
 
     .bg-red {
-        background: var(--pico-color-red-500);
+        background: var(--pico-color-red);
+        border-color: transparent;
+    }
+
+    .bg-orange {
+        background: var(--pico-color-orange);
+        border-color: transparent;
+    }
+
+    .bg-jade {
+        background: var(--pico-color-jade);
+        border-color: transparent;
+    }
+
+    .bg-fuchsia {
+        background: var(--pico-color-fuchsia);
+        border-color: transparent;
+    }
+
+    .bg-indigo {
+        background: var(--pico-color-indigo);
+        border-color: transparent;
+    }
+
+    .bg-azure {
+        background: var(--pico-color-jade);
+        border-color: transparent;
+    }
+
+    .bg-slate {
+        background: var(--pico-color-azure);
         border-color: transparent;
     }
 
@@ -189,6 +229,16 @@
         background: transparent;
     }
 
+    input[type="date"].date-mini {
+        height: 2em;
+        font-size: 0.8em;
+        ;
+    }
+
+    label {
+        padding-right: 0.5em;
+    }
+
     .half-size {
         min-width: unset;
         width: calc(50% - 0.25em) !important;
@@ -214,6 +264,11 @@
         width: calc(30% - 0.25em) !important;
     }
 
+    .thirtyfive {
+        min-width: unset;
+        width: calc(35% - 0.25em) !important;
+    }
+
     .forth {
         min-width: unset;
         width: calc(40% - 0.25em) !important;
@@ -227,4 +282,26 @@
     .seventh {
         min-width: unset;
         width: calc(70% - 0.25em) !important;
+    }
+
+    .hgt2-1 {
+        height: 2.1em;
+    }
+
+    .flex-row {
+        display: flex;
+        flex-direction: row;
+    }
+
+    .flex-row.right {
+        justify-content: flex-end;
+    }
+
+    .flex-row.left {
+        justify-content: flex-start;
+    }
+
+    .divider-v {
+        padding-left: 0.5em;
+        padding-right: 0.5em;
     }

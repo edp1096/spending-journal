@@ -15,6 +15,8 @@ const payType = {
     "hybrid": "복합",
 }
 
+const numericPointStep = { "USD": "0.01", "KRW": "1" }
+
 let exchangeRate = 1300
 
 function checkFormValidation(form, event) {
@@ -33,32 +35,33 @@ function checkFormValidation(form, event) {
 
 const allData = () => {
     const initializer = {
+        appReady: false,
+        lightmode: JSON.parse(localStorage.getItem("lightmode")),
         showAccountList: false,
         showRecordList: false,
+        summaryDateInterval: parseInt(localStorage.getItem("summary-date-interval") || "7"),
+        summaryDateFrom: new Date(new Date().setDate(new Date().getDate() - 7)).toLocaleDateString('en-CA'),
+        summaryDateTo: new Date().toLocaleDateString('en-CA'),
         accounts: [],
-        accountData: {
-            open: false,
-            account: {}
-        },
+        accountData: { open: false, account: {} },
         recordsResponse: {},
         recordData: {
             open: false,
-            numberStep: { "USD": "0.01", "KRW": "1" },
+            step: numericPointStep,
             accountName: "",
             record: {}
         },
-        preferenceData: {
-            open: false,
-            preferences: {
-                "old-password": "",
-                "new-password": ""
-            }
-        },
+        preferenceData: { open: false, preferences: { "old-password": "", "new-password": "" } },
         clearListViewSelection() {
             const container = document.querySelector(".header-button-container").children
             for (const c of container) { c.classList.remove("contrast") }
             this.showAccountList = false
             this.showRecordList = false
+        },
+        showHome() {
+            this.clearListViewSelection()
+
+            return
         },
         async getAccounts() {
             const uri = `${addr}/account`
@@ -154,7 +157,13 @@ const allData = () => {
             return false
         },
         async getRecords() {
-            const uri = `${addr}/record?q=record:&pageSize=1000`
+            if (!this.appReady) { return false }
+            if (isNaN(new Date(this.summaryDateFrom).getTime()) || isNaN(new Date(this.summaryDateTo).getTime())) {
+                return false
+            }
+
+            // const uri = `${addr}/record?q=record:&pageSize=1000`
+            const uri = `${addr}/record/sum?from=${this.summaryDateFrom}&to=${this.summaryDateTo}`
             const r = await fetch(uri)
             if (r.ok) {
                 this.recordsResponse = await r.json()
@@ -383,6 +392,7 @@ async function enterPassword(event) {
             passwordGate.open = false
 
             const body = Alpine.$data(document.querySelector("body"))
+            body.appReady = true
             body.getAccounts()
             body.getRecords()
 

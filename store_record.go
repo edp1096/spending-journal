@@ -144,9 +144,10 @@ func getRecords(queries []string, page, pageSize int, queryType string) ([]Recor
 	return results, totalPay, totalIncome, int(searchResults.Total), nil
 }
 
-func getSumByPeriod(startDate, endDate string) ([]Record, float64, float64, error) {
+func getSumByPeriod(startDate, endDate string) ([]Record, float64, float64, float64, error) {
 	var records []Record = []Record{}
 	var sumPay float64 = 0
+	var sumScheduledPay float64 = 0
 	var sumIncome float64 = 0
 
 	err := db.View(func(txn *badger.Txn) error {
@@ -166,7 +167,12 @@ func getSumByPeriod(startDate, endDate string) ([]Record, float64, float64, erro
 
 					switch record.TransactionType {
 					case "record_type_pay":
-						sumPay += record.Amount
+						switch record.PayType {
+						case "direct":
+							sumPay += record.Amount
+						case "credit":
+							sumScheduledPay += record.Amount
+						}
 					case "record_type_income":
 						sumIncome += record.Amount
 					}
@@ -181,5 +187,5 @@ func getSumByPeriod(startDate, endDate string) ([]Record, float64, float64, erro
 		return nil
 	})
 
-	return records, sumPay, sumIncome, err
+	return records, sumIncome, sumPay, sumScheduledPay, err
 }

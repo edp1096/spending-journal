@@ -12,5 +12,4 @@ var listenADDR = listenIP + ":" + listenPORT
 var db *badger.DB
 var bleveIndex bleve.Index
 
-var PayTypesDirect = []string{"현금", "체크카드", "직불카드"}
-var PayTypesCredit = []string{"신용카드"}
+var ExchangeRate float64 = 1390

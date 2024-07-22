@@ -81,6 +81,11 @@ func databasePasswordChangeHandler(w http.ResponseWriter, r *http.Request) {
 func addAccountHandler(w http.ResponseWriter, r *http.Request) {
 	var account Account
 
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
 	err := json.NewDecoder(r.Body).Decode(&account)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -103,6 +108,11 @@ func addAccountHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
 	recordID := r.URL.Query().Get("id")
 	if recordID == "" {
 		http.Error(w, "'id' is required", http.StatusBadRequest)
@@ -120,6 +130,11 @@ func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateAccountHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
 	accountID := r.URL.Query().Get("id")
 	if accountID == "" {
 		http.Error(w, "'id' is required", http.StatusBadRequest)
@@ -154,6 +169,11 @@ func updateAccountHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAccountListHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
 	accounts, err := getAccountList()
 	if err != nil {
 		http.Error(w, "Failed to get accounts", http.StatusInternalServerError)
@@ -165,6 +185,11 @@ func getAccountListHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addRecordHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
 	var record Record
 
 	err := json.NewDecoder(r.Body).Decode(&record)
@@ -189,6 +214,11 @@ func addRecordHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteRecordHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
 	accountID := r.URL.Query().Get("id")
 	if accountID == "" {
 		http.Error(w, "'id' is required", http.StatusBadRequest)
@@ -206,6 +236,11 @@ func deleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateRecordHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
 	recordID := r.URL.Query().Get("id")
 	if recordID == "" {
 		http.Error(w, "'id' is required", http.StatusBadRequest)
@@ -240,6 +275,11 @@ func updateRecordHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRecordHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
 	query := r.URL.Query().Get("q")
 	if query == "" {
 		http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
@@ -290,27 +330,34 @@ func getRecordHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getSumHandler(w http.ResponseWriter, r *http.Request) {
-	startDate := r.URL.Query().Get("start")
-	endDate := r.URL.Query().Get("end")
-	if startDate == "" || endDate == "" {
-		http.Error(w, "Both 'start' and 'end' query parameters are required", http.StatusBadRequest)
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
 		return
 	}
 
-	records, sumPay, sumIncome, err := getSumByPeriod(startDate, endDate)
+	fromDate := r.URL.Query().Get("from")
+	toDate := r.URL.Query().Get("to")
+	if fromDate == "" || toDate == "" {
+		http.Error(w, "Both 'from' and 'to' query parameters are required", http.StatusBadRequest)
+		return
+	}
+
+	records, sumIncome, sumPay, sumScheduledPay, err := getSumByPeriod(fromDate, toDate)
 	if err != nil {
 		http.Error(w, "Failed to calculate sum", http.StatusInternalServerError)
 		return
 	}
 
 	response := struct {
-		Records   []Record `json:"records"`
-		SumPay    float64  `json:"sum-pay"`
-		SumIncome float64  `json:"sum-income"`
+		Records         []Record `json:"records"`
+		SumIncome       float64  `json:"sum-income"`
+		SumPay          float64  `json:"sum-pay"`
+		SumScheduledPay float64  `json:"sum-scheduled-pay"`
 	}{
-		Records:   records,
-		SumPay:    sumPay,
-		SumIncome: sumIncome,
+		Records:         records,
+		SumIncome:       sumIncome,
+		SumPay:          sumPay,
+		SumScheduledPay: sumScheduledPay,
 	}
 
 	w.WriteHeader(http.StatusOK)
