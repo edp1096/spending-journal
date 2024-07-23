@@ -83,26 +83,31 @@ const allData = () => {
         setupChart() {
             if (this.chart) { this.chart.destroy() }
 
-            let labels = []
-            let values = []
+            const total = parseFloat(this.recordsResponse["sum-pay"]) + parseFloat(this.recordsResponse["sum-credit-pay"])
+            const labels = [
+                ...new Set([
+                    ...Object.keys(this.recordsResponse["stats"]).map(
+                        key => this.recordsResponse["stats"][key].category
+                    ),
+                    ...Object.keys(this.recordsResponse["stats-credit"]).map(
+                        key => this.recordsResponse["stats-credit"][key].category
+                    )
+                ])
+            ]
+            const values = labels.map(label => {
+                const amountDirect = Object.values(this.recordsResponse["stats"]).find(
+                    item => item.category === label
+                )?.amount || 0
+                const amountCredit = Object.values(this.recordsResponse["stats-credit"]).find(
+                    item => item.category === label
+                )?.amount || 0
 
-            if (this.recordsResponse.stats) {
-                let total = parseFloat(this.recordsResponse["sum-pay"]) + parseFloat(this.recordsResponse["sum-credit-pay"])
-                for (const s of Object.values(this.recordsResponse.stats)) {
-                    labels.push(s.category)
-
-                    let amount = s.amount
-                    if (this.recordsResponse["stats-credit"][s.category]) {
-                        amount += this.recordsResponse["stats-credit"][s.category].amount
-                    }
-
-                    values.push((parseFloat(amount) / total * 100).toFixed(0))
-                }
-            }
+                return ((amountDirect + amountCredit) / total * 100).toFixed(0)
+            })
 
             const chartData = {
                 labels: labels,
-                datasets: [{ label: '비중', data: values, borderWidth: 1 }],
+                datasets: [{ label: '지출 비중', data: values, borderWidth: 1 }],
             }
 
             Chart.overrides.pie.plugins.legend.position = "right"
