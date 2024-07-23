@@ -81,11 +81,11 @@ const allData = () => {
 
         /* Home screen */
         setupChart() {
-            let labels = ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange']
-            let values = [12, 19, 3, 5, 2, 3]
+            if (this.chart) { this.chart.destroy() }
+
+            let labels = []
+            let values = []
             if (this.recordsResponse.stats) {
-                labels = []
-                values = []
                 for (const s of Object.values(this.recordsResponse.stats)) {
                     labels.push(s.category)
                     values.push((parseFloat(s.amount) / parseFloat(this.recordsResponse["sum-pay"]) * 100).toFixed(0))
@@ -97,22 +97,18 @@ const allData = () => {
                 datasets: [{ label: '비중', data: values, borderWidth: 1 }],
             }
 
-            if (this.chart) { this.chart.destroy() }
-
-            this.$nextTick(() => {
-                Chart.overrides.pie.plugins.legend.position = "right"
-                this.chartCTX = document.querySelector("#home-chart")
-                this.chart = new Chart(this.chartCTX, {
-                    type: "pie",
-                    data: chartData,
-                    options: { plugins: { tooltip: { callbacks: { label: (ctx) => { return `${ctx.label}: ${ctx.parsed}%` } } } } }
-                })
+            Chart.overrides.pie.plugins.legend.position = "right"
+            this.chartCTX = document.querySelector("#home-chart")
+            this.chart = new Chart(this.chartCTX, {
+                type: "pie",
+                data: chartData,
+                options: { plugins: { tooltip: { callbacks: { label: (ctx) => { return `${ctx.label}: ${ctx.parsed}%` } } } } }
             })
         },
         showHome() {
             this.clearListViewSelection()
             this.showHomeScreen = true
-            this.$nextTick(() => { this.setupChart() })
+            this.setupChart()
 
             return
         },
@@ -464,12 +460,9 @@ const allData = () => {
             alert("Fail to delete record")
             return false
         },
-        async changeDateSearchRange() {
+        async changeDateRange() {
             await this.getRecords()
-
-            if (this.showHomeScreen) {
-                this.$nextTick(() => {this.showHome()})
-            }
+            if (this.showHomeScreen) { this.showHome() }
         },
         isAccountNameDuplicate() {
             let result = false
