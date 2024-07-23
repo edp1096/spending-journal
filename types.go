@@ -33,3 +33,9 @@ type Record struct {
 	Time            string  `json:"time"`
 	RegDTTM         string
 }
+
+// Stat of records
+type Stat struct {
+	Category string  `json:"category"`
+	Amount   float64 `json:"amount"`
+}

@@ -420,29 +420,26 @@ func getRecordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// records, sumPay, sumCreditPay, sumIncome, totalCount, err := getRecords(queries, page, pageSize, queryType, startDate, endDate)
-	records, sumPay, sumCreditPay, sumIncome, err := getRecords(queries, queryType, startDate, endDate)
+	records, stats, statsCredit, sumPay, sumCreditPay, sumIncome, err := getRecords(queries, queryType, startDate, endDate)
 	if err != nil {
 		http.Error(w, "Failed to search records", http.StatusInternalServerError)
 		return
 	}
 
 	response := struct {
-		Records      []Record `json:"records"`
-		SumPay       float64  `json:"sum-pay"`
-		SumCreditPay float64  `json:"sum-credit-pay"`
-		SumIncome    float64  `json:"sum-income"`
-		// TotalCount   int      `json:"total-count"`
-		// Page         int      `json:"page"`
-		// PageSize     int      `json:"page_size"`
+		Records      []Record        `json:"records"`
+		Stats        map[string]Stat `json:"stats"`
+		StatsCredit  map[string]Stat `json:"stats-credit"`
+		SumPay       float64         `json:"sum-pay"`
+		SumCreditPay float64         `json:"sum-credit-pay"`
+		SumIncome    float64         `json:"sum-income"`
 	}{
 		Records:      records,
+		Stats:        stats,
+		StatsCredit:  statsCredit,
 		SumPay:       sumPay,
 		SumCreditPay: sumCreditPay,
 		SumIncome:    sumIncome,
-		// TotalCount:   totalCount,
-		// Page:         page,
-		// PageSize:     pageSize,
 	}
 
 	w.WriteHeader(http.StatusOK)

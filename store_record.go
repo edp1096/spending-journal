@@ -89,11 +89,12 @@ func updateRecord(id string, updatedRecord Record) error {
 	return err
 }
 
-// func getRecords(queries []string, page, pageSize int, queryType string, startDate, endDate time.Time) ([]Record, float64, float64, float64, int, error) {
-func getRecords(queries []string, queryType string, startDate, endDate time.Time) ([]Record, float64, float64, float64, error) {
+func getRecords(queries []string, queryType string, startDate, endDate time.Time) ([]Record, map[string]Stat, map[string]Stat, float64, float64, float64, error) {
 	var results []Record = []Record{}
+	var stat map[string]Stat = map[string]Stat{}
+	var statCredit map[string]Stat = map[string]Stat{}
 	var totalPay float64 = 0
-	var totalScheduledPay float64 = 0
+	var totalCreditPay float64 = 0
 	var totalIncome float64 = 0
 
 	boolQuery := bleve.NewBooleanQuery()
@@ -124,7 +125,7 @@ func getRecords(queries []string, queryType string, startDate, endDate time.Time
 
 	searchResults, err := bleveIndex.Search(search)
 	if err != nil {
-		return nil, 0, 0, 0, err
+		return nil, nil, nil, 0, 0, 0, err
 	}
 
 	accounts, _ := getAccountListMAP()
@@ -152,14 +153,27 @@ func getRecords(queries []string, queryType string, startDate, endDate time.Time
 			switch record.PayType {
 			case "direct":
 				totalPay += record.Amount
+
+				amount := record.Amount
+				if s, exist := stat[record.Category]; exist {
+					amount = s.Amount + record.Amount
+				}
+				stat[record.Category] = Stat{Category: record.Category, Amount: amount}
 			case "credit":
 				repayDay, err1 := strconv.Atoi(accounts[record.AccountID].RepayDay)
 				useDayFrom, err2 := strconv.Atoi(accounts[record.AccountID].UseDayFrom)
 				useDayTo, err3 := strconv.Atoi(accounts[record.AccountID].UseDayTo)
 
-				// if meet err, set as not repaid
+				// If meet err, keep the type not repaid
 				if err1 != nil || err2 != nil || err3 != nil {
-					totalScheduledPay += record.Amount
+					totalCreditPay += record.Amount
+
+					amount := record.Amount
+					if s, exist := statCredit[record.Category]; exist {
+						amount = s.Amount + record.Amount
+					}
+					statCredit[record.Category] = Stat{Category: record.Category, Amount: amount}
+
 					continue
 				}
 
@@ -169,6 +183,13 @@ func getRecords(queries []string, queryType string, startDate, endDate time.Time
 				// Assume already paid: the day before "useDateFrom"
 				if recordDate.Before(useDateFrom) {
 					totalPay += record.Amount
+
+					amount := record.Amount
+					if s, exist := stat[record.Category]; exist {
+						amount = s.Amount + record.Amount
+					}
+					stat[record.Category] = Stat{Category: record.Category, Amount: amount}
+
 					continue
 				}
 
@@ -177,16 +198,28 @@ func getRecords(queries []string, queryType string, startDate, endDate time.Time
 				// * "endDate" is later than "repayDate"
 				if (recordDate.Before(useDateTo) || recordDate.Equal(useDateTo)) && (endDate.After(repayDate) || endDate.Equal(repayDate)) {
 					totalPay += record.Amount
+
+					amount := record.Amount
+					if s, exist := stat[record.Category]; exist {
+						amount = s.Amount + record.Amount
+					}
+					stat[record.Category] = Stat{Category: record.Category, Amount: amount}
+
 					continue
 				}
 
-				totalScheduledPay += record.Amount
+				totalCreditPay += record.Amount
+
+				amount := record.Amount
+				if s, exist := statCredit[record.Category]; exist {
+					amount = s.Amount + record.Amount
+				}
+				statCredit[record.Category] = Stat{Category: record.Category, Amount: amount}
 			}
 		case "record_type_income":
 			totalIncome += record.Amount
 		}
 	}
 
-	// return results, totalPay, totalScheduledPay, totalIncome, int(searchResults.Total), nil
-	return results, totalPay, totalScheduledPay, totalIncome, nil
+	return results, stat, statCredit, totalPay, totalCreditPay, totalIncome, nil
 }

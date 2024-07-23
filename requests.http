@@ -2,7 +2,7 @@
 
 
 ### setup db
-GET {{uri}}/setup/db?password=1234 HTTP/1.1
+GET {{uri}}/setup/db?password=1 HTTP/1.1
 
 
 ### change password

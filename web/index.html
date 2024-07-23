@@ -45,11 +45,15 @@
         </div>
 
         <!-- Home screen -->
-        <template x-if="!showAccountList && !showCategoryList && !showRecordList">
-            <div class="table-container flex-row center middle">
+        <template x-if="showHomeScreen">
+            <div class="home-screen table-container flex-row center middle">
+                <h3>지출</h3>
                 <canvas id="home-chart"></canvas>
 
-                차트는 아직 기능 없음.
+                <table>
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </template>
 
@@ -158,9 +162,9 @@
         <div class="summary-container">
             <div class="full-size hgt2-1 flex-row right">
                 <label>기간:</label>
-                <input x-model="summaryDateFrom" :change="getRecords" class="date-mini wdt-38" type="date">
+                <input x-model="summaryDateFrom" :change="changeDateSearchRange" class="date-mini wdt-38" type="date">
                 <span class="divider-v">~</span>
-                <input x-model="summaryDateTo" :change="getRecords" class="date-mini wdt-38" type="date">
+                <input x-model="summaryDateTo" :change="changeDateSearchRange" class="date-mini wdt-38" type="date">
             </div>
 
             <div>

@@ -48,6 +48,7 @@ const allData = () => {
 
         chartCTX: null,
         chart: null,
+        showHomeScreen: false,
         showAccountList: false,
         showCategoryList: false,
         showRecordList: false,
@@ -56,14 +57,6 @@ const allData = () => {
         summaryDateFrom: new Date(new Date().setDate(new Date().getDate() - 7)).toLocaleDateString('en-CA'),
         summaryDateTo: new Date().toLocaleDateString('en-CA'),
 
-        chartData: {
-            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-            datasets: [{
-                label: '비중',
-                data: [12, 19, 3, 5, 2, 3],
-                borderWidth: 1
-            }]
-        },
         accounts: [],
         accountData: { open: false, account: {} },
         categories: [],
@@ -80,14 +73,29 @@ const allData = () => {
         clearListViewSelection() {
             const container = document.querySelector(".header-button-container").children
             for (const c of container) { c.classList.remove("contrast") }
+            this.showHomeScreen = false
             this.showAccountList = false
             this.showCategoryList = false
             this.showRecordList = false
         },
 
         /* Home screen */
-        showHome() {
-            this.clearListViewSelection()
+        setupChart() {
+            let labels = ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange']
+            let values = [12, 19, 3, 5, 2, 3]
+            if (this.recordsResponse.stats) {
+                labels = []
+                values = []
+                for (const s of Object.values(this.recordsResponse.stats)) {
+                    labels.push(s.category)
+                    values.push((parseFloat(s.amount) / parseFloat(this.recordsResponse["sum-pay"]) * 100).toFixed(0))
+                }
+            }
+
+            const chartData = {
+                labels: labels,
+                datasets: [{ label: '비중', data: values, borderWidth: 1 }],
+            }
 
             if (this.chart) { this.chart.destroy() }
 
@@ -95,17 +103,16 @@ const allData = () => {
                 Chart.overrides.pie.plugins.legend.position = "right"
                 this.chartCTX = document.querySelector("#home-chart")
                 this.chart = new Chart(this.chartCTX, {
-                    // type: "bar",
-                    // type: "doughnut",
                     type: "pie",
-                    data: this.chartData,
-                    options: {
-                        plugins: {
-                            tooltip: { callbacks: { label: (ctx) => { return `${ctx.label}: ${ctx.parsed}%` } } }
-                        }
-                    }
+                    data: chartData,
+                    options: { plugins: { tooltip: { callbacks: { label: (ctx) => { return `${ctx.label}: ${ctx.parsed}%` } } } } }
                 })
             })
+        },
+        showHome() {
+            this.clearListViewSelection()
+            this.showHomeScreen = true
+            this.$nextTick(() => { this.setupChart() })
 
             return
         },
@@ -456,6 +463,13 @@ const allData = () => {
 
             alert("Fail to delete record")
             return false
+        },
+        async changeDateSearchRange() {
+            await this.getRecords()
+
+            if (this.showHomeScreen) {
+                this.$nextTick(() => {this.showHome()})
+            }
         },
         isAccountNameDuplicate() {
             let result = false

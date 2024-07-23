@@ -12,6 +12,11 @@
         justify-content: space-around;
     }
 
+    .home-screen {
+        padding-top: 10em;
+        height: calc(100vh - 13em) !important;
+    }
+
     .table-container {
         display: flex;
         flex-direction: row;
@@ -325,9 +330,11 @@
     .flex-row.top {
         align-content: flex-start;
     }
+
     .flex-row.middle {
         align-content: center;
     }
+
     .flex-row.bottom {
         align-content: flex-end;
     }
