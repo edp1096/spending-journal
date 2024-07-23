@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
@@ -126,7 +127,7 @@ func getRecords(queries []string, queryType string, startDate, endDate time.Time
 		return nil, 0, 0, 0, err
 	}
 
-	// accounts, _ := getAccountListMAP()
+	accounts, _ := getAccountListMAP()
 
 	for _, hit := range searchResults.Hits {
 		var record Record
@@ -152,18 +153,31 @@ func getRecords(queries []string, queryType string, startDate, endDate time.Time
 			case "direct":
 				totalPay += record.Amount
 			case "credit":
-				// 일단 보류
-				// recordDate, err := time.Parse("2006-01-02", record.Date)
-				// if err != nil {
-				// 	continue
-				// }
+				repayDay, err1 := strconv.Atoi(accounts[record.AccountID].RepayDay)
+				useDayFrom, err2 := strconv.Atoi(accounts[record.AccountID].UseDayFrom)
+				useDayTo, err3 := strconv.Atoi(accounts[record.AccountID].UseDayTo)
 
-				// oneMonthBefore := endDate.AddDate(0, -1, 0)
-				// repayDay, err := strconv.Atoi(accounts[record.AccountID].RepayDay)
-				// if err != nil {
-				// 	continue
-				// }
-				// repayDate := time.Date(endDate.Year(), endDate.Month(), repayDay, 0, 0, 0, 0, endDate.Location())
+				if err1 != nil || err2 != nil || err3 != nil {
+					totalScheduledPay += record.Amount
+					continue
+				}
+
+				repayDate, useDateFrom, useDateTo := getCreditDates(repayDay, useDayFrom, useDayTo, endDate)
+				recordDate, _ := time.Parse("2006-01-02 15:04", record.Date+" "+record.Time)
+
+				// Assume already paid: the day before "useDateFrom"
+				if recordDate.Before(useDateFrom) {
+					totalPay += record.Amount
+					continue
+				}
+
+				// Assume already paid: the day which meet all of the following conditions
+				// * "recordDate" is Between "useDateFrom" and "useDateTo" - "useDateFrom" is already filtered by the above condition
+				// * "endDate" is later than "repayDate"
+				if (recordDate.Before(useDateTo) || recordDate.Equal(useDateTo)) && (endDate.After(repayDate) || endDate.Equal(repayDate)) {
+					totalPay += record.Amount
+					continue
+				}
 
 				totalScheduledPay += record.Amount
 			}

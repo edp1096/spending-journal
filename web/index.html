@@ -22,18 +22,16 @@
 
         <!-- Main menu -->
         <div class="main-header-container">
-            <h2>지출기입장</h2>
+            <h2 @click="showHome">
+                <span class="icon">home</span> 지출기입장
+            </h2>
 
             <div class="header-button-container">
-                <button @click="showHome" class="outline secondary icon-tab icon-align">
-                    <span class="icon">home</span> 홈
-                </button>
-
                 <button @click="showAccounts" class="outline secondary icon-tab icon-align">
                     <span class="icon">book_5</span> 계정
                 </button>
                 <button @click="showRecords" class="outline secondary icon-tab icon-align ">
-                    <span class="icon">edit_note</span> 지출입
+                    <span class="icon">edit_note</span> 거래
                 </button>
                 <button @click="openPreference" class="outline secondary icon-tab icon-align">
                     <span class="icon">settings</span> 설정
@@ -41,7 +39,7 @@
             </div>
         </div>
 
-        <!-- Blank screen -->
+        <!-- Home screen -->
         <template x-if="!showAccountList && !showRecordList">
             <div class="table-container"></div>
         </template>
@@ -57,10 +55,10 @@
                     <thead>
                         <template x-if="accounts.length > 0">
                             <tr>
-                                <th>계정 이름</th>
+                                <th class="th-center">계정 이름</th>
                                 <th>계정 유형</th>
                                 <th>결제일</th>
-                                <th>삭제</th>
+                                <th class="th-center">삭제</th>
                             </tr>
                         </template>
                     </thead>
@@ -92,9 +90,9 @@
                         <template x-if="recordsResponse.records && recordsResponse.records.length > 0">
                             <tr>
                                 <th class="th-center">일시</th>
-                                <th class="th-center">분류</th>
-                                <th class="th-center">지불</th>
-                                <th class="th-center">금액</th>
+                                <th >분류</th>
+                                <th >지불</th>
+                                <th >금액</th>
                                 <th class="th-center">삭제</th>
                             </tr>
                         </template>
@@ -102,7 +100,7 @@
                     <tbody>
                         <template x-for="(r, index) in recordsResponse.records" :key="index">
                             <tr @click="openInputRecord(index)">
-                                <td x-text="`${r.date} ${r.time}`"></td>
+                                <td x-text="`${convertDateMD(r.date)} ${r.time}`"></td>
                                 <td x-text="r.category"></td>
                                 <td x-text="`${payType[r['pay-type']]}`"></td>
                                 <td x-text="`${currencyCode[r.currency]} ${r.amount}`"></td>
@@ -129,7 +127,7 @@
             <div>
                 <span x-text="`수입: ${(recordsResponse['sum-income'] ?? 0)}`"></span>
                 <span x-text="`지출: ${(recordsResponse['sum-pay'] ?? 0)}`"></span>
-                <span x-text="`신용: ${(recordsResponse['sum-scheduled-pay'] ?? 0)}`"></span>
+                <span x-text="`신용: ${(recordsResponse['sum-credit-pay'] ?? 0)}`"></span>
             </div>
         </div>
     </div>

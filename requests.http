@@ -116,7 +116,7 @@ Content-Type: application/json
 }
 
 ### get record list
-GET {{uri}}/record?q=record:&from=2024-05-01&to=2024-08-30 HTTP/1.1
+GET {{uri}}/record?q=record:&from=2024-05-01&to=2024-08-9 HTTP/1.1
 
 ### get record list
 GET {{uri}}/record?q=record:&page=1&pageSize=1000 HTTP/1.1
@@ -129,6 +129,3 @@ GET {{uri}}/record?q=record_type_income&page=1&pageSize=1000 HTTP/1.1
 
 ### search
 GET {{uri}}/record?q=record_type_pay%20아침&queryType=AND&page=1&pageSize=100 HTTP/1.1
-
-### summary by period
-GET {{uri}}/record/sum?from=2024-07-01&to=2024-07-31 HTTP/1.1

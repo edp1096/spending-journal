@@ -33,6 +33,13 @@ function checkFormValidation(form, event) {
     return true
 }
 
+function convertDateMD(dateString) {
+    if (!dateString) return ''
+    const [year, month, day] = dateString.split('-')
+
+    return `${month}-${day}`
+}
+
 const allData = () => {
     const initializer = {
         appReady: false,
