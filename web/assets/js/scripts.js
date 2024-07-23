@@ -1,5 +1,3 @@
-/* Utility */
-
 const addr = "http://localhost:8080"
 
 const currencyCode = {
@@ -43,19 +41,29 @@ function convertDateMD(dateString) {
 }
 
 
-
-/* Alpine.js */
-
 const allData = () => {
     const initializer = {
         appReady: false,
         lightmode: JSON.parse(localStorage.getItem("lightmode")),
+
+        chartCTX: null,
+        chart: null,
         showAccountList: false,
         showCategoryList: false,
         showRecordList: false,
+
         summaryDateInterval: parseInt(localStorage.getItem("summary-date-interval") || "7"),
         summaryDateFrom: new Date(new Date().setDate(new Date().getDate() - 7)).toLocaleDateString('en-CA'),
         summaryDateTo: new Date().toLocaleDateString('en-CA'),
+
+        chartData: {
+            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+            datasets: [{
+                label: '비중',
+                data: [12, 19, 3, 5, 2, 3],
+                borderWidth: 1
+            }]
+        },
         accounts: [],
         accountData: { open: false, account: {} },
         categories: [],
@@ -68,6 +76,7 @@ const allData = () => {
             record: {}
         },
         preferenceData: { open: false, preferences: { "old-password": "", "new-password": "" } },
+
         clearListViewSelection() {
             const container = document.querySelector(".header-button-container").children
             for (const c of container) { c.classList.remove("contrast") }
@@ -75,8 +84,28 @@ const allData = () => {
             this.showCategoryList = false
             this.showRecordList = false
         },
+
+        /* Home screen */
         showHome() {
             this.clearListViewSelection()
+
+            if (this.chart) { this.chart.destroy() }
+
+            this.$nextTick(() => {
+                Chart.overrides.pie.plugins.legend.position = "right"
+                this.chartCTX = document.querySelector("#home-chart")
+                this.chart = new Chart(this.chartCTX, {
+                    // type: "bar",
+                    // type: "doughnut",
+                    type: "pie",
+                    data: this.chartData,
+                    options: {
+                        plugins: {
+                            tooltip: { callbacks: { label: (ctx) => { return `${ctx.label}: ${ctx.parsed}%` } } }
+                        }
+                    }
+                })
+            })
 
             return
         },
@@ -541,6 +570,7 @@ async function enterPassword(event) {
             body.getAccounts()
             body.getCategories()
             body.getRecords()
+            body.showHome()
 
             return
         }
@@ -554,21 +584,3 @@ document.addEventListener('alpine:init', () => { })
 
 
 
-/* Chart.js */
-
-const chartCTX = document.querySelector("#home-chart")
-const chart = new Chart(chartCTX, {
-    type: 'bar',
-    data: {
-        labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-        datasets: [{
-            label: '# of Votes',
-            data: [12, 19, 3, 5, 2, 3],
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: false,
-        scales: { y: { beginAtZero: true } }
-    }
-})
