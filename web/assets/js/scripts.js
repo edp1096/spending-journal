@@ -46,8 +46,8 @@ const allData = () => {
         appReady: false,
         lightmode: JSON.parse(localStorage.getItem("lightmode")),
 
-        chartCTX: null,
         chart: null,
+        chartCredit: null,
         showHomeScreen: false,
         showAccountList: false,
         showCategoryList: false,
@@ -85,10 +85,18 @@ const allData = () => {
 
             let labels = []
             let values = []
+
             if (this.recordsResponse.stats) {
+                let total = parseFloat(this.recordsResponse["sum-pay"]) + parseFloat(this.recordsResponse["sum-credit-pay"])
                 for (const s of Object.values(this.recordsResponse.stats)) {
                     labels.push(s.category)
-                    values.push((parseFloat(s.amount) / parseFloat(this.recordsResponse["sum-pay"]) * 100).toFixed(0))
+
+                    let amount = s.amount
+                    if (this.recordsResponse["stats-credit"][s.category]) {
+                        amount += this.recordsResponse["stats-credit"][s.category].amount
+                    }
+
+                    values.push((parseFloat(amount) / total * 100).toFixed(0))
                 }
             }
 
@@ -98,16 +106,20 @@ const allData = () => {
             }
 
             Chart.overrides.pie.plugins.legend.position = "right"
-            this.chartCTX = document.querySelector("#home-chart")
-            this.chart = new Chart(this.chartCTX, {
-                type: "pie",
-                data: chartData,
-                options: { plugins: { tooltip: { callbacks: { label: (ctx) => { return `${ctx.label}: ${ctx.parsed}%` } } } } }
-            })
+            const chartCTX = document.querySelector("#home-chart")
+            const chartCreditCTX = document.querySelector("#home-chart-credit")
+            if (labels.length > 0) {
+                this.chart = new Chart(chartCTX, {
+                    type: "pie",
+                    data: chartData,
+                    options: { plugins: { tooltip: { callbacks: { label: (ctx) => { return `${ctx.label}: ${ctx.parsed}%` } } } } }
+                })
+            }
         },
-        showHome() {
+        async showHome() {
             this.clearListViewSelection()
             this.showHomeScreen = true
+            await this.$nextTick()
             this.setupChart()
 
             return
