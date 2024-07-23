@@ -37,10 +37,18 @@ func getSalt(filename string) ([]byte, error) {
 
 func validateAccount(account Account) error {
 	if account.AccountName == "" {
-		return fmt.Errorf("name is required")
+		return fmt.Errorf("account name is required")
 	}
 	if account.PayType == "" {
 		return fmt.Errorf("pay-type is required")
+	}
+
+	return nil
+}
+
+func validateCategory(category Category) error {
+	if category.CategoryName == "" {
+		return fmt.Errorf("category name is required")
 	}
 
 	return nil

@@ -157,6 +157,7 @@ func getRecords(queries []string, queryType string, startDate, endDate time.Time
 				useDayFrom, err2 := strconv.Atoi(accounts[record.AccountID].UseDayFrom)
 				useDayTo, err3 := strconv.Atoi(accounts[record.AccountID].UseDayTo)
 
+				// if meet err, set as not repaid
 				if err1 != nil || err2 != nil || err3 != nil {
 					totalScheduledPay += record.Amount
 					continue

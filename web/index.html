@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>지출기입장</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 
     <link rel="stylesheet" href="assets/css/pico.min.css">
     <link rel="stylesheet" href="assets/css/pico.colors.min.css">
+    <script src="assets/js/chart.js"></script>
     <script src="assets/js/alpine.min.js" defer></script>
 
     <link rel="stylesheet" href="assets/icons/material.css">
@@ -22,13 +24,16 @@
 
         <!-- Main menu -->
         <div class="main-header-container">
-            <h2 @click="showHome">
-                <span class="icon">home</span> 지출기입장
+            <h2 @click="showHome" class="pointer flex-row center">
+                <span class="icon md-36">home</span> 지출기입장
             </h2>
 
             <div class="header-button-container">
                 <button @click="showAccounts" class="outline secondary icon-tab icon-align">
                     <span class="icon">book_5</span> 계정
+                </button>
+                <button @click="showCategories" class="outline secondary icon-tab icon-align ">
+                    <span class="icon">account_tree</span> 분류
                 </button>
                 <button @click="showRecords" class="outline secondary icon-tab icon-align ">
                     <span class="icon">edit_note</span> 거래
@@ -40,8 +45,10 @@
         </div>
 
         <!-- Home screen -->
-        <template x-if="!showAccountList && !showRecordList">
-            <div class="table-container"></div>
+        <template x-if="!showAccountList && !showCategoryList && !showRecordList">
+            <div class="table-container flex-row left middle">
+                <canvas id="home-chart"></canvas>
+            </div>
         </template>
 
         <!-- Payment accounts -->
@@ -55,7 +62,7 @@
                     <thead>
                         <template x-if="accounts.length > 0">
                             <tr>
-                                <th class="th-center">계정 이름</th>
+                                <th>계정 이름</th>
                                 <th>계정 유형</th>
                                 <th>결제일</th>
                                 <th class="th-center">삭제</th>
@@ -69,7 +76,37 @@
                                 <td x-text="`${payType[m['pay-type']]}`"></td>
                                 <td x-text="m['repay-day']"></td>
                                 <td class="one td-center">
-                                    <button @click.stop="deleteAccount(index)" type="button" class="bg-orange">X</button>
+                                    <button @click="deleteAccount(index)" type="button" class="bg-orange">X</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+
+        <!-- Payment categories -->
+        <template x-if="showCategoryList">
+            <div class="table-container">
+                <button @click="openInputCategory" class="full-size bg-jade icon-align">
+                    분류 추가 <span class="icon">add</span>
+                </button>
+
+                <table>
+                    <thead>
+                        <template x-if="categories.length > 0">
+                            <tr>
+                                <th>분류명</th>
+                                <th class="th-center">삭제</th>
+                            </tr>
+                        </template>
+                    </thead>
+                    <tbody>
+                        <template x-for="(c, index) in categories" :key="index">
+                            <tr @click="openInputCategory(index)">
+                                <td x-text="c['category-name']"></td>
+                                <td class="one td-center">
+                                    <button @click="deleteCategory(index)" type="button" class="bg-orange">X</button>
                                 </td>
                             </tr>
                         </template>
@@ -90,9 +127,9 @@
                         <template x-if="recordsResponse.records && recordsResponse.records.length > 0">
                             <tr>
                                 <th class="th-center">일시</th>
-                                <th >분류</th>
-                                <th >지불</th>
-                                <th >금액</th>
+                                <th>분류</th>
+                                <th>지불</th>
+                                <th>금액</th>
                                 <th class="th-center">삭제</th>
                             </tr>
                         </template>
@@ -100,12 +137,12 @@
                     <tbody>
                         <template x-for="(r, index) in recordsResponse.records" :key="index">
                             <tr @click="openInputRecord(index)">
-                                <td x-text="`${convertDateMD(r.date)} ${r.time}`"></td>
+                                <td x-text="`${convertDateMD(r.date)} ${r.time}`" class="td-center"></td>
                                 <td x-text="r.category"></td>
                                 <td x-text="`${payType[r['pay-type']]}`"></td>
                                 <td x-text="`${currencyCode[r.currency]} ${r.amount}`"></td>
                                 <td class="one td-center">
-                                    <button @click.stop="deleteRecord(index)" type="button" class="bg-orange">X</button>
+                                    <button @click="deleteRecord(index)" type="button" class="bg-orange">X</button>
                                 </td>
                             </tr>
                         </template>
@@ -139,7 +176,7 @@
                 비밀번호를 입력해주세요 <span class="icon md-36">lock</span>
             </h3>
 
-            <form x-ref="passwordForm">
+            <form x-ref="passwordForm" @submit.prevent="enterPassword($event)">
                 <input x-ref="passwordInput" type="password" id="password" placeholder="비밀번호 입력" required>
                 <button @click="enterPassword($event)">확인</button>
             </form>
@@ -148,10 +185,10 @@
 
     <!-- Add/Edit pay account -->
     <div x-data="accountData" @keyup.escape.window="open = false">
-        <form x-ref="accountForm" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+        <form x-ref="accountForm" @submit.prevent="setAccount($event)" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
             <h2>계정 정보 입력/수정</h2>
 
-            <input x-model="account['account-name']" :change="checkAccountNameDuplicate()" placeholder="계정 이름(카드/통장/지갑 등)" required>
+            <input x-model="account['account-name']" :change="isAccountNameDuplicate" placeholder="계정 이름(카드/통장/지갑 등)" required>
             <select x-model="account['pay-type']">
                 <option value="direct">직불/현금</option>
                 <option value="credit">신용/외상</option>
@@ -159,7 +196,7 @@
             </select>
 
             <select x-model="account['repay-day']">
-                <option value="">월 결제일</option>
+                <option value="">카드 대금 결제일</option>
                 <template x-for="day in 31" :key="day">
                     <option :value="day" x-text="day"></option>
                 </template>
@@ -182,15 +219,29 @@
             <textarea x-model="account.description" placeholder="메모"></textarea>
 
             <div class="dialog-button-container">
-                <button @click.stop="open = !open" type="button" class="bg-red">취소</button>
-                <button @click.stop="setAccount($event)" type="button">확인</button>
+                <button @click="open = !open" type="button" class="bg-red">취소</button>
+                <button @click="setAccount($event)">확인</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Add/Edit pay category -->
+    <div x-data="categoryData" @keyup.escape.window="open = false">
+        <form x-ref="categoryForm" @submit.prevent="setCategory($event)" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+            <h2>분류명 입력/수정</h2>
+
+            <input x-model="category['category-name']" :change="isCategoryNameDuplicate" placeholder="분류명(식비/간식/교통비 등)" required>
+
+            <div class="dialog-button-container">
+                <button @click="open = !open" type="button" class="bg-red">취소</button>
+                <button @click="setCategory($event)">확인</button>
             </div>
         </form>
     </div>
 
     <!-- Add/Edit record -->
     <div x-data="recordData" @keyup.escape.window="open = false">
-        <form x-ref="recordForm" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
+        <form x-ref="recordForm" @submit.prevent="setRecord($event)" class="dialog-fullsize dialog-add-edit" x-show="open" x-transition>
             <h2>거래 입력/수정</h2>
 
             <select x-model="record['transaction-type']">
@@ -204,7 +255,7 @@
             </select>
 
             <div class="datalist-input-container">
-                <input x-model="accountName" :change="setRecordPayType" x-ref="payAccount" list="account-list" placeholder="계정 (현금/통장/카드 등)" required>
+                <input x-model="accountName" x-ref="payAccount" :change="setRecordPayType" list="account-list" placeholder="계정 (현금/통장/카드 등)" required>
                 <datalist id="account-list">
                     <template x-for="(a, index) in accounts" :key="index">
                         <option :value="a['account-name']"></option>
@@ -216,10 +267,9 @@
             <div class="datalist-input-container">
                 <input x-model="record.category" x-ref="payCategory" list="category-list" placeholder="분류" required>
                 <datalist id="category-list">
-                    <option value="식비">
-                    <option value="간식">
-                    <option value="교통">
-                    <option value="담배">
+                    <template x-for="(c, index) in categories" :key="index">
+                        <option :value="c['category-name']"></option>
+                    </template>
                 </datalist>
                 <button @click="record.category=''; $refs.payCategory.focus()" class="clear bg-orange" type="button">X</button>
             </div>
@@ -236,7 +286,7 @@
 
             <div class="dialog-button-container">
                 <button @click="open = !open" type="button" class="bg-red">취소</button>
-                <button @click="setRecord($event)" type="button">확인</button>
+                <button @click="setRecord($event)">확인</button>
             </div>
         </form>
     </div>

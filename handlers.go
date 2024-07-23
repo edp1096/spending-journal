@@ -113,15 +113,15 @@ func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	recordID := r.URL.Query().Get("id")
-	if recordID == "" {
+	accountID := r.URL.Query().Get("id")
+	if accountID == "" {
 		http.Error(w, "'id' is required", http.StatusBadRequest)
 		return
 	}
 
-	err := deleteAccount(recordID)
+	err := deleteAccount(accountID)
 	if err != nil {
-		http.Error(w, "Failed to delete record", http.StatusInternalServerError)
+		http.Error(w, "Failed to delete account", http.StatusInternalServerError)
 		return
 	}
 
@@ -184,6 +184,112 @@ func getAccountListHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(accounts)
 }
 
+func addCategoryHandler(w http.ResponseWriter, r *http.Request) {
+	var category Category
+
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&category)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err = addCategory(category)
+	if err != nil {
+		httpStatus := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "required") {
+			httpStatus = http.StatusBadRequest
+		}
+
+		http.Error(w, "Failed to add category", httpStatus)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+func deleteCategoryHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
+	categoryID := r.URL.Query().Get("id")
+	if categoryID == "" {
+		http.Error(w, "'id' is required", http.StatusBadRequest)
+		return
+	}
+
+	err := deleteCategory(categoryID)
+	if err != nil {
+		http.Error(w, "Failed to delete category", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+func updateCategoryHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
+	categoryID := r.URL.Query().Get("id")
+	if categoryID == "" {
+		http.Error(w, "'id' is required", http.StatusBadRequest)
+		return
+	}
+
+	var updatedCategory Category
+	err := json.NewDecoder(r.Body).Decode(&updatedCategory)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err = validateCategory(updatedCategory)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = updateCategory(categoryID, updatedCategory)
+	if err != nil {
+		httpStatus := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "Key not found") {
+			httpStatus = http.StatusBadRequest
+		}
+		http.Error(w, "Failed to update category", httpStatus)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+func getCategoryListHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Enter password first", http.StatusBadRequest)
+		return
+	}
+
+	category, err := getCategoryList()
+	if err != nil {
+		http.Error(w, "Failed to get categories", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(category)
+}
+
 func addRecordHandler(w http.ResponseWriter, r *http.Request) {
 	if db == nil {
 		http.Error(w, "Enter password first", http.StatusBadRequest)
@@ -219,13 +325,13 @@ func deleteRecordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accountID := r.URL.Query().Get("id")
-	if accountID == "" {
+	recordID := r.URL.Query().Get("id")
+	if recordID == "" {
 		http.Error(w, "'id' is required", http.StatusBadRequest)
 		return
 	}
 
-	err := deleteRecord(accountID)
+	err := deleteRecord(recordID)
 	if err != nil {
 		http.Error(w, "Failed to delete record", http.StatusInternalServerError)
 		return
@@ -326,7 +432,7 @@ func getRecordHandler(w http.ResponseWriter, r *http.Request) {
 		SumPay       float64  `json:"sum-pay"`
 		SumCreditPay float64  `json:"sum-credit-pay"`
 		SumIncome    float64  `json:"sum-income"`
-		TotalCount   int      `json:"total-count"`
+		// TotalCount   int      `json:"total-count"`
 		// Page         int      `json:"page"`
 		// PageSize     int      `json:"page_size"`
 	}{

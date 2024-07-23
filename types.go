@@ -1,6 +1,6 @@
 package server
 
-// Payment account - cash, card. for input completion
+// Payment account - cash, card
 type Account struct {
 	ID          string `json:"id"`
 	AccountName string `json:"account-name"`
@@ -10,6 +10,13 @@ type Account struct {
 	UseDayTo    string `json:"use-day-to,omitempty"`
 	Description string `json:"description,omitempty"`
 	RegDTTM     string
+}
+
+// Payment category - meals, snack, bus/tube/taxi, etc.
+type Category struct {
+	ID           string `json:"id"`
+	CategoryName string `json:"category-name"`
+	RegDTTM      string
 }
 
 // Paymenr record

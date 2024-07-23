@@ -49,6 +49,31 @@ Content-Type: application/json
 GET {{uri}}/account HTTP/1.1
 
 
+
+### add category
+POST {{uri}}/category HTTP/1.1
+Content-Type: application/json
+
+{
+    "category-name": "식비"
+}
+
+### delete category
+DELETE {{uri}}/category?id=category:1721731337 HTTP/1.1
+
+### update pay account
+PUT {{uri}}/category?id=category:1721731337 HTTP/1.1
+Content-Type: application/json
+
+{
+    "category-name": "점심"
+}
+
+### get category list
+GET {{uri}}/category HTTP/1.1
+
+
+
 ### add payment
 POST {{uri}}/record HTTP/1.1
 Content-Type: application/json
@@ -116,16 +141,13 @@ Content-Type: application/json
 }
 
 ### get record list
-GET {{uri}}/record?q=record:&from=2024-05-01&to=2024-08-9 HTTP/1.1
-
-### get record list
-GET {{uri}}/record?q=record:&page=1&pageSize=1000 HTTP/1.1
+GET {{uri}}/record?q=record:&from=2024-05-01&to=2024-08-10 HTTP/1.1
 
 ### get record list pays only
-GET {{uri}}/record?q=record_type_pay&page=1&pageSize=1000 HTTP/1.1
+GET {{uri}}/record?q=record_type_pay&queryType=AND&from=2024-05-01&to=2024-08-09 HTTP/1.1
 
 ### get record list incomes only
-GET {{uri}}/record?q=record_type_income&page=1&pageSize=1000 HTTP/1.1
+GET {{uri}}/record?q=record_type_income&queryType=AND&from=2024-05-01&to=2024-08-09 HTTP/1.1
 
 ### search
-GET {{uri}}/record?q=record_type_pay%20아침&queryType=AND&page=1&pageSize=100 HTTP/1.1
+GET {{uri}}/record?q=record_type_pay%20아침&queryType=AND&from=2024-05-01&to=2024-08-09 HTTP/1.1

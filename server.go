@@ -22,6 +22,12 @@ func SetupServer() {
 	mux.HandleFunc("PUT /account", updateAccountHandler)
 	mux.HandleFunc("GET /account", getAccountListHandler)
 
+	// Pay account
+	mux.HandleFunc("POST /category", addCategoryHandler)
+	mux.HandleFunc("DELETE /category", deleteCategoryHandler)
+	mux.HandleFunc("PUT /category", updateCategoryHandler)
+	mux.HandleFunc("GET /category", getCategoryListHandler)
+
 	// Pay record
 	mux.HandleFunc("POST /record", addRecordHandler)
 	mux.HandleFunc("DELETE /record", deleteRecordHandler)

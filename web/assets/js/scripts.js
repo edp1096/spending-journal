@@ -1,3 +1,5 @@
+/* Utility */
+
 const addr = "http://localhost:8080"
 
 const currencyCode = {
@@ -40,17 +42,24 @@ function convertDateMD(dateString) {
     return `${month}-${day}`
 }
 
+
+
+/* Alpine.js */
+
 const allData = () => {
     const initializer = {
         appReady: false,
         lightmode: JSON.parse(localStorage.getItem("lightmode")),
         showAccountList: false,
+        showCategoryList: false,
         showRecordList: false,
         summaryDateInterval: parseInt(localStorage.getItem("summary-date-interval") || "7"),
         summaryDateFrom: new Date(new Date().setDate(new Date().getDate() - 7)).toLocaleDateString('en-CA'),
         summaryDateTo: new Date().toLocaleDateString('en-CA'),
         accounts: [],
         accountData: { open: false, account: {} },
+        categories: [],
+        categoryData: { open: false, category: {} },
         recordsResponse: {},
         recordData: {
             open: false,
@@ -63,6 +72,7 @@ const allData = () => {
             const container = document.querySelector(".header-button-container").children
             for (const c of container) { c.classList.remove("contrast") }
             this.showAccountList = false
+            this.showCategoryList = false
             this.showRecordList = false
         },
         showHome() {
@@ -70,6 +80,8 @@ const allData = () => {
 
             return
         },
+
+        /* Account control */
         async getAccounts() {
             const uri = `${addr}/account`
             const r = await fetch(uri)
@@ -100,6 +112,8 @@ const allData = () => {
                 this.accountData.account["account-name"] = this.accounts[index]["account-name"]
                 this.accountData.account["pay-type"] = this.accounts[index]["pay-type"]
                 this.accountData.account["repay-day"] = this.accounts[index]["repay-day"]
+                this.accountData.account["use-day-from"] = this.accounts[index]["use-day-from"]
+                this.accountData.account["use-day-to"] = this.accounts[index]["use-day-to"]
                 this.accountData.account.description = this.accounts[index].description
             }
 
@@ -129,13 +143,13 @@ const allData = () => {
                 }
             }
 
-            alert("Fail to set record")
+            alert("Fail to set account")
             return false
         },
         async setAccount(event) {
             if (!checkFormValidation(this.$refs.accountForm, event)) { return false }
 
-            if (this.checkAccountNameDuplicate()) {
+            if (this.isAccountNameDuplicate()) {
                 alert("같은 이름의 계정이 있습니다.")
                 return false
             }
@@ -160,9 +174,100 @@ const allData = () => {
                 }
             }
 
-            alert("Fail to delete record")
+            alert("Fail to delete account")
             return false
         },
+
+        /* Category control */
+        async getCategories() {
+            const uri = `${addr}/category`
+            const r = await fetch(uri)
+            if (r.ok) {
+                this.categories = await r.json()
+                return true
+            }
+
+            return false
+        },
+        async showCategories() {
+            if (await this.getCategories()) {
+                this.clearListViewSelection()
+                this.showCategoryList = true
+                this.$event.target.classList.add('contrast')
+            }
+        },
+        openInputCategory(index = null) {
+            this.categoryData.category = {}
+
+            this.categoryData.category["category-name"] = ""
+
+            if (index >= 0) {
+                this.categoryData.category["category-id"] = this.categories[index].id
+                this.categoryData.category["category-name"] = this.categories[index]["category-name"]
+            }
+
+            this.categoryData.open = true
+        },
+        async requestSetCategory() {
+            let requestMethod = "POST"
+            let params = ""
+            if (this.categoryData.category["category-id"]) {
+                requestMethod = "PUT"
+                params = `?id=${this.categoryData.category["category-id"]}`
+            }
+
+            const uri = `${addr}/category${params}`
+            const r = await fetch(uri, {
+                method: requestMethod,
+                headers: { "content-Type": "application/json" },
+                body: JSON.stringify(this.categoryData.category)
+            })
+            if (r.ok) {
+                const response = await r.json()
+
+                if (response.status == "success") {
+                    await this.getCategories()
+                    this.categoryData.open = false
+                    return
+                }
+            }
+
+            alert("Fail to set category")
+            return false
+        },
+        async setCategory(event) {
+            if (!checkFormValidation(this.$refs.categoryForm, event)) { return false }
+
+            if (this.isCategoryNameDuplicate()) {
+                alert("같은 이름의 분류가 있습니다.")
+                return false
+            }
+
+            await this.requestSetCategory()
+        },
+        async deleteCategory(index) {
+            if (!this.categories[index].id) {
+                alert("Wrong action")
+                return false
+            }
+
+            const uri = `${addr}/category?id=${this.categories[index].id}`
+            const r = await fetch(uri, { method: "DELETE" })
+            if (r.ok) {
+                const response = await r.json()
+
+                if (response.status == "success") {
+                    await this.getCategories()
+                    this.categoryData.open = false
+                    return
+                }
+            }
+
+            alert("Fail to delete category")
+            return false
+        },
+
+        /* Record control */
         async getRecords() {
             if (!this.appReady) { return false }
             if (isNaN(new Date(this.summaryDateFrom).getTime()) || isNaN(new Date(this.summaryDateTo).getTime())) {
@@ -285,6 +390,21 @@ const allData = () => {
                 }
             }
 
+            let isCategoryExist = false
+            for (c of this.categories) {
+                if (c["category-name"] == this.recordData.record["category"]) {
+                    isCategoryExist = true
+                    break
+                }
+            }
+
+            if (!isCategoryExist) {
+                this.categoryData.category = {
+                    "category-name": this.recordData.record["category"]
+                }
+                await this.requestSetCategory()
+            }
+
             await this.requestSetRecord()
         },
         async deleteRecord(index) {
@@ -308,27 +428,47 @@ const allData = () => {
             alert("Fail to delete record")
             return false
         },
-        checkAccountNameDuplicate() {
+        isAccountNameDuplicate() {
+            let result = false
+
             if (this.accountData.account["account-name"] == "") {
-                return
+                return result
             }
 
             for (const a of this.accounts) {
                 if (a["account-name"] == this.accountData.account["account-name"]) {
                     if (a.id == this.accountData.account["account-id"]) {
-                        // 같은 row는 수정이므로 중복체크 안하고 패스
-                        return false
+                        result = false // 같은 row는 수정이므로 중복체크 안하고 패스
+                        break
                     }
+
+                    result = true
                 }
             }
 
-            return true
+            return result
+        },
+        isCategoryNameDuplicate() {
+            let result = false
+
+            if (this.categoryData.category["category-name"] == "") {
+                return result
+            }
+
+            for (const c of this.categories) {
+                if (c["category-name"] == this.categoryData.category["category-name"]) {
+                    if (c.id == this.categoryData.category["category-id"]) {
+                        result = false // 같은 row는 수정이므로 중복체크 안하고 패스
+                        break
+                    }
+
+                    result = true
+                }
+            }
+
+            return result
         },
         async setRecordPayType() {
-            if (this.accountName == "") {
-                this.recordData.record["pay-type"] = "direct"
-                return
-            }
             for (const a of this.accounts) {
                 if (a["account-name"] == this.accountName) {
                     this.recordData.record["pay-type"] = a["pay-type"]
@@ -341,8 +481,6 @@ const allData = () => {
         },
         async changePassword(event) {
             if (!checkFormValidation(this.$refs.preferenceForm, event)) { return false }
-
-            // Control this.preferenceData.preferences
 
             const passwordOLD = this.preferenceData.preferences["old-password"]
             const passwordNEW = this.preferenceData.preferences["new-password"]
@@ -401,6 +539,7 @@ async function enterPassword(event) {
             const body = Alpine.$data(document.querySelector("body"))
             body.appReady = true
             body.getAccounts()
+            body.getCategories()
             body.getRecords()
 
             return
@@ -412,3 +551,24 @@ async function enterPassword(event) {
 }
 
 document.addEventListener('alpine:init', () => { })
+
+
+
+/* Chart.js */
+
+const chartCTX = document.querySelector("#home-chart")
+const chart = new Chart(chartCTX, {
+    type: 'bar',
+    data: {
+        labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+        datasets: [{
+            label: '# of Votes',
+            data: [12, 19, 3, 5, 2, 3],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: false,
+        scales: { y: { beginAtZero: true } }
+    }
+})

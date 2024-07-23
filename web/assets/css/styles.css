@@ -27,11 +27,15 @@
         top: 0;
     }
 
-    tr:nth-child(even) {
+    thead tr {
+        background: var(--pico-mark-background-color);
+    }
+
+    tbody tr:nth-child(even) {
         background: var(--pico-range-border-color);
     }
 
-    tr:hover {
+    tbody tr:hover {
         background: var(--pico-form-element-border-color);
     }
 
@@ -306,15 +310,33 @@
         flex-direction: row;
     }
 
-    .flex-row.right {
-        justify-content: flex-end;
+    .flex-row.center {
+        justify-content: center;
     }
 
     .flex-row.left {
         justify-content: flex-start;
     }
 
+    .flex-row.right {
+        justify-content: flex-end;
+    }
+
+    .flex-row.top {
+        align-content: flex-start;
+    }
+    .flex-row.middle {
+        align-content: center;
+    }
+    .flex-row.bottom {
+        align-content: flex-end;
+    }
+
     .divider-v {
         padding-left: 0.3em;
         padding-right: 0.3em;
+    }
+
+    .pointer {
+        cursor: pointer;
     }
