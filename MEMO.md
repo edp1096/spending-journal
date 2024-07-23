@@ -45,6 +45,9 @@
 * 설정 - https://www.flaticon.com/kr/free-icon/gears_4115432
 
 
+## swal
+* https://www.codeply.com/p/ysgHFaqFYN
+
 
 # 홈 인사말 적었던거
 ```html
