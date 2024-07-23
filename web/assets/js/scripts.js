@@ -1,4 +1,11 @@
-const addr = "http://localhost:8080"
+const url = window.location
+
+const protocol = url.protocol
+const hostname = url.hostname
+const port = url.port || (protocol === 'https:' ? '443' : '80')
+
+// const addr = "http://localhost:8080"
+const addr = `${protocol}//${hostname}:${port}`
 
 const currencyCode = {
     "KRW": "₩",

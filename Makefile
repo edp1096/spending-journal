@@ -1,9 +1,12 @@
 .PHONY: default
 default: build
 
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
+
 fname := server
 fext :=
-ifeq ($(OS),Windows_NT)
+ifeq ($(GOOS),Windows_NT)
 	fname := server
 	fext := .exe
 endif
