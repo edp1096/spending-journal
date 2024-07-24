@@ -1,8 +1,8 @@
-@uri = http://localhost:8080
+@uri = http://localhost:12480
 
 
 ### setup db
-GET {{uri}}/setup/db?password=1 HTTP/1.1
+GET {{uri}}/setup/db?password=12 HTTP/1.1
 
 
 ### change password

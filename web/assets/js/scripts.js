@@ -607,6 +607,7 @@ async function enterPassword(event) {
         }
     }
 
+    // alert("Wrong password" + await r.text())
     alert("Wrong password")
     return false
 }
