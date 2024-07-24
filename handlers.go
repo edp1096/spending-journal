@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("It works!"))
+}
+
 func databaseSetupHandler(w http.ResponseWriter, r *http.Request) {
 	password := r.URL.Query().Get("password")
 	if password == "" {

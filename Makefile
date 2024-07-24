@@ -6,7 +6,8 @@ GOARCH ?= $(shell go env GOARCH)
 
 fname := server
 fext :=
-ifeq ($(GOOS),Windows_NT)
+# ifeq ($(GOOS),Windows_NT)
+ifeq ($(GOOS),windows)
 	fname := server
 	fext := .exe
 endif

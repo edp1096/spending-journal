@@ -13,6 +13,8 @@ import (
 func SetupServer() {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /health", healthHandler)
+
 	mux.HandleFunc("GET /setup/db", databaseSetupHandler)
 	mux.HandleFunc("GET /setup/db/password", databasePasswordChangeHandler)
 
