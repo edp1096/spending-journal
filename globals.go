@@ -7,7 +7,7 @@ import (
 
 // var listenIP = "0.0.0.0"
 var listenIP = "127.0.0.1"
-var listenPORT = "12581"
+var listenPORT = "12480"
 var listenADDR = listenIP + ":" + listenPORT
 
 var db *badger.DB
