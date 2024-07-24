@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func SetupServer() {
+func StartServer() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", healthHandler)
