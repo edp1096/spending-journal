@@ -13,4 +13,4 @@ var listenADDR = listenIP + ":" + listenPORT
 var db *badger.DB
 var bleveIndex bleve.Index
 
-var ExchangeRate float64 = 1390
+var ExchangeRate float64 = 1350
